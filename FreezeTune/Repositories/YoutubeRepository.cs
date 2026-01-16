@@ -40,7 +40,7 @@ public class YoutubeRepository : IYoutubeRepository
             //var streamInfo = manifest.GetVideoOnlyStreams().GetWithHighestVideoQuality();
             await youtube.Videos.Streams.DownloadAsync(streamInfo, GetVideoPathFor(date));
 
-            int counter = 0;
+            var counter = 0;
             foreach (var timeSpan in positions)
             {
               var res=  await FFmpeg.Conversions.FromSnippet.Snapshot(GetVideoPathFor
