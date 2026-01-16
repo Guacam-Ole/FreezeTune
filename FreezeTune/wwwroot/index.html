@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FreezeTune - Guess the Song!</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>FreezeTune</h1>
+            <p class="subtitle">Guess the song from the freeze frame!</p>
+        </header>
+
+        <div id="game-screen" class="game-screen">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+                <div class="progress-text" id="progress-text">Image 1 of 8</div>
+            </div>
+
+            <div class="image-container">
+                <img id="game-image" src="" alt="Guess the song" class="game-image">
+                <div class="image-loader" id="image-loader">
+                    <div class="spinner"></div>
+                    <p>Loading...</p>
+                </div>
+            </div>
+
+            <form id="guess-form" class="guess-form">
+                <div class="input-group">
+                    <label for="interpret">Artist / Interpret</label>
+                    <input
+                        type="text"
+                        id="interpret"
+                        name="interpret"
+                        placeholder="Enter artist name"
+                        required
+                        autocomplete="off"
+                    >
+                    <span class="feedback" id="interpret-feedback"></span>
+                </div>
+
+                <div class="input-group">
+                    <label for="title">Song Title</label>
+                    <input
+                        type="text"
+                        id="title"
+                        name="title"
+                        placeholder="Enter song title"
+                        required
+                        autocomplete="off"
+                    >
+                    <span class="feedback" id="title-feedback"></span>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submit-btn">
+                    Submit Guess
+                </button>
+            </form>
+
+<!--            <div class="category-selector">-->
+<!--                <label for="category">Category:</label>-->
+<!--                <select id="category" name="category">-->
+<!--                    <option value="80s">80s</option>-->
+<!--                    <option value="90s">90s</option>-->
+<!--                    <option value="2000s">2000s</option>-->
+<!--                    <option value="rock">Rock</option>-->
+<!--                    <option value="pop">Pop</option>-->
+<!--                </select>-->
+<!--                <button id="restart-btn" class="restart-btn">New Game</button>-->
+<!--            </div>-->
+        </div>
+
+        <div id="success-screen" class="success-screen hidden">
+            <div class="success-content">
+                <div class="success-header">
+                    <h2>Congratulations!</h2>
+                    <p class="success-message">You guessed it correctly!</p>
+                </div>
+
+                <div class="song-info">
+                    <h3 id="success-interpret"></h3>
+                    <p id="success-title"></p>
+                    <p class="guess-count">You got it in <span id="final-guess-count"></span> guess(es)!</p>
+                </div>
+
+                <div class="video-container">
+                    <iframe
+                        id="youtube-video"
+                        width="100%"
+                        height="400"
+                        src=""
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen>
+                    </iframe>
+                </div>
+
+                <button id="play-again-btn" class="play-again-btn">Play Again</button>
+            </div>
+        </div>
+
+        <div id="error-message" class="error-message hidden"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
