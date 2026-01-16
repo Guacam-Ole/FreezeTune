@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FreezeTune.Controllers;
 
+[Route("Image")]
 public class ImagesController : Controller
 {
     private readonly IUserLogic _userLogic;

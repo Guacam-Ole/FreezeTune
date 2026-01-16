@@ -13,7 +13,7 @@ public class ImageRepository : IImageRepository
 
     public string GetBase64Image(string category, DateOnly date, int number)
     {
-        using var image = new MagickImage($"{_config.BasePath}/{category}-{date:yyyy-MM-dd}-{number}.png");
+        using var image = new MagickImage($"{_config.BasePath}/img/{category}-{date:yyyy-MM-dd}-{number}.png");
         image.Resize(_config.Width, _config.Height);
         var imgBase64 = image.ToBase64();
         return imgBase64;

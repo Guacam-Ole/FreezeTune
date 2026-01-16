@@ -8,15 +8,17 @@ public class UserLogic:IUserLogic
 {
     private const int _maxDistance = 4;
     private readonly IDatabaseRepository _databaseRepository;
+    private readonly IImageRepository _imageRepositor;
 
-    public UserLogic(IDatabaseRepository databaseRepository)
+    public UserLogic(IDatabaseRepository databaseRepository, IImageRepository imageRepositor)
     {
         _databaseRepository = databaseRepository;
+        _imageRepositor = imageRepositor;
     }
     
     public string GetImage(string category, DateOnly date, int currentNumber)
     {
-        throw new NotImplementedException();
+        return _imageRepositor.GetBase64Image(category, date, currentNumber);
     }
     
     public CalculationResult TakeAGuess(string category, Guess guess)
