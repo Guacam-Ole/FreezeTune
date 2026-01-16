@@ -9,14 +9,16 @@ namespace FreezeTune.Controllers;
 public class ImagesController : Controller
 {
     private readonly IUserLogic _userLogic;
+    private readonly IDatabaseRepository _databaseRepository;
 
-    public ImagesController(IUserLogic userLogic)
+    public ImagesController(IUserLogic userLogic, IDatabaseRepository databaseRepository)
     {
         _userLogic = userLogic;
+        _databaseRepository = databaseRepository;
     }
 
     [HttpPost]
-    public Result Guess(string category, Guess guess)
+    public Result Guess(string category, [FromBody]Guess guess)
     {
         var date = new DateOnly(DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day);
         var guessResult = _userLogic.TakeAGuess(category, guess);
@@ -27,6 +29,14 @@ public class ImagesController : Controller
             Match = guessResult.Match,
         };
         if (result.Match != null) return result;
+
+        // If user has reached max guesses (8), return the correct answer
+        if (guess.GuessCount >= 8)
+        {
+            result.Match = _databaseRepository.GetForDay(category, date);
+            return result;
+        }
+
         result.NextPictureContents = _userLogic.GetImage(category, date, guess.GuessCount);
         result.NextPicture = guess.GuessCount + 1;
         return result;

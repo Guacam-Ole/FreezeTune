@@ -28,6 +28,8 @@ public class DatabaseRepository : IDatabaseRepository
     {
         using var db = new LiteDatabase(GetDbName(daily.Category));
         var dailies = db.GetCollection<Daily>();
+        var existing = dailies.FindOne(q => q.Date == daily.Date);
+        if (existing != null) dailies.Delete(existing.Id);
         dailies.Upsert(daily);
     }
 

@@ -16,7 +16,6 @@ const titleFeedback = document.getElementById('title-feedback');
 const submitBtn = document.getElementById('submit-btn');
 const categorySelect = document.getElementById('category');
 const restartBtn = document.getElementById('restart-btn');
-const playAgainBtn = document.getElementById('play-again-btn');
 const progressFill = document.getElementById('progress-fill');
 const progressText = document.getElementById('progress-text');
 const errorMessage = document.getElementById('error-message');
@@ -26,18 +25,31 @@ const successInterpret = document.getElementById('success-interpret');
 const successTitle = document.getElementById('success-title');
 const finalGuessCount = document.getElementById('final-guess-count');
 const youtubeVideo = document.getElementById('youtube-video');
+const shareResultsBtn = document.getElementById('share-results-btn');
+
+// Store the last game result for sharing
+let lastGameResult = {
+    guesses: 0,
+    success: false
+};
 
 // Initialize game on page load
 window.addEventListener('DOMContentLoaded', () => {
-    currentCategory = categorySelect.value;
+    if (categorySelect) {
+        currentCategory = categorySelect.value;
+    }
     startNewGame();
 });
 
 // Event listeners
 guessForm.addEventListener('submit', handleGuessSubmit);
-categorySelect.addEventListener('change', handleCategoryChange);
-restartBtn.addEventListener('click', startNewGame);
-playAgainBtn.addEventListener('click', startNewGame);
+if (categorySelect) {
+    categorySelect.addEventListener('change', handleCategoryChange);
+}
+if (restartBtn) {
+    restartBtn.addEventListener('click', startNewGame);
+}
+shareResultsBtn.addEventListener('click', shareResults);
 
 // Start a new game
 async function startNewGame() {
@@ -48,8 +60,10 @@ async function startNewGame() {
     showGameScreen();
 
     try {
-        currentCategory = categorySelect.value;
-        const response = await fetch(`/Images?category=${encodeURIComponent(currentCategory)}`);
+        if (categorySelect) {
+            currentCategory = categorySelect.value;
+        }
+        const response = await fetch(`/image?category=${encodeURIComponent(currentCategory)}`);
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -76,23 +90,21 @@ async function handleGuessSubmit(event) {
     const interpret = interpretInput.value.trim();
     const title = titleInput.value.trim();
 
-    if (!interpret || !title) {
-        showError('Please fill in both fields');
-        return;
-    }
-
     // Disable submit button
     submitBtn.disabled = true;
     submitBtn.textContent = 'Checking...';
 
+    // Increment guess count for this attempt
+    currentGuessCount++;
+
     try {
         const guessData = {
-            interpret: interpret,
-            title: title,
-            guessCount: currentGuessCount
+            Interpret: interpret,
+            Title: title,
+            GuessCount: currentGuessCount
         };
 
-        const response = await fetch(`/Images?category=${encodeURIComponent(currentCategory)}`, {
+        const response = await fetch(`/image?category=${encodeURIComponent(currentCategory)}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -119,7 +131,7 @@ async function handleGuessSubmit(event) {
 function handleGuessResult(result) {
     currentGuessCount = result.guesses;
 
-    // Check if the user got it right
+    // Check if the user got it right (or ran out of guesses)
     if (result.match) {
         showSuccess(result.match, result.guesses);
         return;
@@ -127,13 +139,6 @@ function handleGuessResult(result) {
 
     // Show feedback for partial correctness
     showFeedback(result.interpretCorrect, result.titleCorrect);
-
-    // Check if we've reached max guesses
-    if (currentGuessCount >= maxGuesses) {
-        showError('Game Over! You\'ve used all your guesses.');
-        submitBtn.disabled = true;
-        return;
-    }
 
     // Load next image
     if (result.nextPictureContents) {
@@ -241,9 +246,29 @@ function showSuccess(match, guesses) {
     gameScreen.classList.add('hidden');
     successScreen.classList.remove('hidden');
 
+    // Store result for sharing
+    lastGameResult = {
+        guesses: guesses,
+        success: guesses < 8
+    };
+
+    // Update header based on whether they won or lost
+    const successHeader = document.querySelector('.success-header h2');
+    const successMessage = document.querySelector('.success-message');
+    const guessCountElement = document.querySelector('.guess-count');
+
+    if (guesses >= 8) {
+        successHeader.textContent = 'Game Over!';
+        successMessage.textContent = 'You ran out of guesses. Here\'s the answer:';
+        guessCountElement.textContent = 'Better luck next time!';
+    } else {
+        successHeader.textContent = 'Congratulations!';
+        successMessage.textContent = 'You guessed it correctly!';
+        guessCountElement.innerHTML = `You got it in <span id="final-guess-count">${guesses}</span> guess(es)!`;
+    }
+
     successInterpret.textContent = match.interpret;
     successTitle.textContent = match.title;
-    finalGuessCount.textContent = guesses;
 
     // Convert YouTube URL to embed URL
     const embedUrl = convertToEmbedUrl(match.url);
@@ -285,4 +310,94 @@ function showError(message) {
     setTimeout(() => {
         errorMessage.classList.add('hidden');
     }, 5000);
+}
+
+// Get ordinal suffix for numbers (1st, 2nd, 3rd, etc.)
+function getOrdinalSuffix(num) {
+    const j = num % 10;
+    const k = num % 100;
+    if (j === 1 && k !== 11) return num + 'st';
+    if (j === 2 && k !== 12) return num + 'nd';
+    if (j === 3 && k !== 13) return num + 'rd';
+    return num + 'th';
+}
+
+// Format date as DD.MM.YY
+function formatDate() {
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = String(now.getFullYear()).slice(-2);
+    return `${day}.${month}.${year}`;
+}
+
+// Generate emoji chain for share text
+function generateEmojiChain(guesses, success) {
+    const filmEmoji = '🎞️';
+    const arrowEmoji = '➜';
+    const successEmoji = '🎵';
+    const failEmoji = '🔇';
+
+    let chain = filmEmoji;
+    for (let i = 1; i < guesses; i++) {
+        chain += ` ${arrowEmoji} ${filmEmoji}`;
+    }
+    chain += ` ${arrowEmoji} ${success ? successEmoji : failEmoji}`;
+
+    return chain;
+}
+
+// Generate share text
+function generateShareText() {
+    const { guesses, success } = lastGameResult;
+    const date = formatDate();
+    const emojiChain = generateEmojiChain(guesses, success);
+
+    // Add medal for top 3 guesses
+    let medal = '';
+    if (success) {
+        if (guesses === 1) medal = '🥇';
+        else if (guesses === 2) medal = '🥈';
+        else if (guesses === 3) medal = '🥉';
+    }
+
+    let headerText;
+    if (success) {
+        const ordinal = getOrdinalSuffix(guesses);
+        headerText = `${medal}🎬 I finished the FreezeTune Daily 80s Music Quiz on the ${ordinal} guess \\o/ | ${date}`;
+    } else {
+        headerText = `🎬 I did not success in the FreezeTune Daily 80s Music Quiz | ${date}`;
+    }
+
+    return `${headerText}\n${emojiChain}\n\nhttp://freezetune.com\n#FreezeTune`;
+}
+
+// Share results function
+async function shareResults() {
+    const shareText = generateShareText();
+
+    try {
+        // Try to use Web Share API if available
+        if (navigator.share) {
+            await navigator.share({
+                text: shareText
+            });
+        } else {
+            // Fallback to clipboard
+            await navigator.clipboard.writeText(shareText);
+
+            // Update button text temporarily
+            const originalText = shareResultsBtn.textContent;
+            shareResultsBtn.textContent = 'Copied!';
+            shareResultsBtn.style.background = 'linear-gradient(135deg, var(--success-color), #059669)';
+
+            setTimeout(() => {
+                shareResultsBtn.textContent = originalText;
+                shareResultsBtn.style.background = '';
+            }, 2000);
+        }
+    } catch (error) {
+        console.error('Error sharing:', error);
+        showError('Failed to copy to clipboard');
+    }
 }

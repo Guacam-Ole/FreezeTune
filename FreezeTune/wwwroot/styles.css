@@ -362,7 +362,7 @@ header h1 {
     width: 100%;
 }
 
-.play-again-btn {
+.share-results-btn {
     padding: 16px 40px;
     font-size: 1.1rem;
     font-weight: 700;
@@ -376,9 +376,20 @@ header h1 {
     letter-spacing: 0.5px;
 }
 
-.play-again-btn:hover {
+.share-results-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
+}
+
+.share-results-btn:active {
+    transform: scale(0.98);
+}
+
+.share-hint {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    opacity: 0.8;
 }
 
 /* Error Message */

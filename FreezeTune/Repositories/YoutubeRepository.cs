@@ -34,13 +34,17 @@ public class YoutubeRepository : IYoutubeRepository
             using var ms = new MemoryStream();
             using var youtube = new YoutubeClient();
             var manifest = await youtube.Videos.Streams.GetManifestAsync(youtubeUrl);
-            var streamInfo = manifest.GetVideoOnlyStreams().GetWithHighestVideoQuality();
+            var streamInfo = manifest.GetVideoOnlyStreams().OrderBy(q => q.VideoResolution.Width).ThenBy(q => q.VideoResolution.Height)
+                .First(q =>
+                    q.VideoResolution.Width >= _config.Width && q.VideoResolution.Height >= _config.Height);
+            //var streamInfo = manifest.GetVideoOnlyStreams().GetWithHighestVideoQuality();
             await youtube.Videos.Streams.DownloadAsync(streamInfo, GetVideoPathFor(date));
 
             int counter = 0;
             foreach (var timeSpan in positions)
             {
-              var res=  await FFmpeg.Conversions.FromSnippet.Snapshot(GetVideoPathFor(date), GetImagePathFor(date, category, counter++), timeSpan);
+              var res=  await FFmpeg.Conversions.FromSnippet.Snapshot(GetVideoPathFor
+                  (date), GetImagePathFor(date, category, counter++), timeSpan);
               await res.Start();
             }
             File.Delete(GetVideoPathFor(date));

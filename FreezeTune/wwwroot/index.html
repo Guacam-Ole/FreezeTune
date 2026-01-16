@@ -9,7 +9,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>FreezeTune</h1>
+            <h1>FreezeTune 80s Music Quiz</h1>
             <p class="subtitle">Guess the song from the freeze frame!</p>
         </header>
 
@@ -34,8 +34,7 @@
                         type="text"
                         id="interpret"
                         name="interpret"
-                        placeholder="Enter artist name"
-                        required
+                        placeholder="Enter artist name (or leave empty)"
                         autocomplete="off"
                     >
                     <span class="feedback" id="interpret-feedback"></span>
@@ -47,8 +46,7 @@
                         type="text"
                         id="title"
                         name="title"
-                        placeholder="Enter song title"
-                        required
+                        placeholder="Enter song title (or leave empty)"
                         autocomplete="off"
                     >
                     <span class="feedback" id="title-feedback"></span>
@@ -97,7 +95,8 @@
                     </iframe>
                 </div>
 
-                <button id="play-again-btn" class="play-again-btn">Play Again</button>
+                <button id="share-results-btn" class="share-results-btn">Share Results</button>
+                <p class="share-hint">Click to copy to clipboard</p>
             </div>
         </div>
 
