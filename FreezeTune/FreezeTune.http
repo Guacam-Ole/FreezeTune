@@ -1,0 +1,6 @@
+@FreezeTune_HostAddress = http://localhost:5075
+
+GET {{FreezeTune_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
