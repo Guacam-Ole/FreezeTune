@@ -28,9 +28,17 @@ public class MaintenanceController : ControllerBase
     [HttpPost("Download")]
     public async Task<Models.Video> Download(string apiKey, string category, [FromBody] Models.Video video)
     {
-        if (!IsValidKey(apiKey)) throw new Exception("Wrong key");
+        try
+        {
+            if (!IsValidKey(apiKey)) throw new Exception("Wrong key");
 
-        return await _maintenanceLogic.Download(category, video);
+            return await _maintenanceLogic.Download(category, video);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
     }
 
     [HttpPost("Temp")]
