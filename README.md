@@ -1,6 +1,6 @@
 # FreezeTune
 
-A game to guess music videos. Can be seen in action on (freezetune.com)
+A game to guess music videos. Can be seen in action on [freezetune.com](https://freezetune.com)
 
 Installation using Docker compose:
 
