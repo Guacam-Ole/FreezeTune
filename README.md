@@ -21,3 +21,9 @@ services:
 Replace FREEZEAPIKEY with something meaningful.
 
 It will be required when calling orga.html
+
+the `data` directory must contain the following subfolders:
+`vid`
+`img`
+`tmp`
+`db`
