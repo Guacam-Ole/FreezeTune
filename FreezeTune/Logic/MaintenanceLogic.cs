@@ -3,16 +3,20 @@ using FreezeTune.Repositories;
 
 namespace FreezeTune.Logic;
 
+
+
 public class MaintenanceLogic:IMaintenanceLogic
 {
     private const int NumberOfFrames = 40;
     private readonly IDatabaseRepository _dbRepository;
     private readonly IYoutubeRepository _ytRepository;
+    private readonly IImageRepository _imageRepositor;
 
-    public MaintenanceLogic(IDatabaseRepository dbRepository, IYoutubeRepository ytRepository)
+    public MaintenanceLogic(IDatabaseRepository dbRepository, IYoutubeRepository ytRepository, IImageRepository imageRepositor)
     {
         _dbRepository = dbRepository;
         _ytRepository = ytRepository;
+        _imageRepositor = imageRepositor;
     }
     
     
@@ -30,6 +34,11 @@ public class MaintenanceLogic:IMaintenanceLogic
     public async Task<Models.Video> Download(string category, Models.Video video)
     {
         return await _ytRepository.DownloadNFrames(video.Url, video.Date, category, NumberOfFrames);
+    }
+
+    public Dictionary<int, string> GetTmpImages(string category, Video video)
+    {
+        return _imageRepositor.GetTempImages(category, video.Date, NumberOfFrames);
     }
 
 

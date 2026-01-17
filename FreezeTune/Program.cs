@@ -15,6 +15,7 @@ builder.Services.AddScoped<IUserLogic, UserLogic>();
 builder.Services.AddScoped<IDatabaseRepository, DatabaseRepository>();
 builder.Services.AddScoped<IImageRepository, ImageRepository>();
 builder.Services.AddScoped<IYoutubeRepository, YoutubeRepository>();
+builder.Services.AddScoped<IMaintenanceLogic, MaintenanceLogic>();
 
 var app = builder.Build();
 

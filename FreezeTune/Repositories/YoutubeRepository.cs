@@ -1,9 +1,6 @@
-using System.ComponentModel;
-using System.Runtime.InteropServices.JavaScript;
 using FreezeTune.Models;
 using Xabe.FFmpeg;
 using YoutubeExplode;
-using YoutubeExplode.Videos.Streams;
 
 namespace FreezeTune.Repositories;
 

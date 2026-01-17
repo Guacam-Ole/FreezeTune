@@ -46,14 +46,10 @@ public class DatabaseRepository : IDatabaseRepository
         var today = new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day);
         using var db = new LiteDatabase(GetDbName(category));
         var allStats = db.GetCollection<Stats>();
-        var todaysStats = allStats.FindOne(q => q.Date == today);
-        if (todaysStats == null)
+        var todaysStats = allStats.FindOne(q => q.Date == today) ?? new Stats
         {
-            todaysStats = new Stats
-            {
-                Date = today
-            };
-        }
+            Date = today
+        };
 
         if (success)
         {

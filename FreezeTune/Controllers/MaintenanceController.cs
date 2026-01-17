@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FreezeTune.Controllers;
 
- [Microsoft.AspNetCore.Components.Route("Maintenance")]
-public class MaintenanceController
+[Route("Maintenance")]
+public class MaintenanceController : ControllerBase
 {
     private readonly IMaintenanceLogic _maintenanceLogic;
 
@@ -15,25 +15,34 @@ public class MaintenanceController
 
     private bool IsValidKey(string key)
     {
-        return key == Environment.GetEnvironmentVariable("FREEZEAPIKEY");
+        var requiredKey = Environment.GetEnvironmentVariable("FREEZEAPIKEY");
+        return key == requiredKey;
     }
-    
+
     [HttpGet("Date")]
     public Models.Video GetDate(string category)
     {
         return _maintenanceLogic.Init(category);
     }
 
-    [HttpGet("Download")]
-    public async Task<Models.Video> Download(string apiKey, string category,Models.Video video)
+    [HttpPost("Download")]
+    public async Task<Models.Video> Download(string apiKey, string category, [FromBody] Models.Video video)
     {
         if (!IsValidKey(apiKey)) throw new Exception("Wrong key");
-        
+
         return await _maintenanceLogic.Download(category, video);
     }
 
+    [HttpPost("Temp")]
+    public Dictionary<int,string> GetTempImages(string apiKey, string category, [FromBody] Models.Video video)
+    {
+        if (!IsValidKey(apiKey)) throw new Exception("Wrong key");
+
+        return _maintenanceLogic.GetTmpImages(category, video);
+    }
+    
     [HttpPost]
-    public bool Store(string apiKey, string category, Models.Video video)
+    public bool Store(string apiKey, string category, [FromBody] Models.Video video)
     {
         if (!IsValidKey(apiKey)) throw new Exception("Wrong key");
         _maintenanceLogic.Add(category, video) ;
