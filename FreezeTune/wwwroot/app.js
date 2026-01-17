@@ -489,8 +489,8 @@ function generateShareText() {
 
     let headerText;
     if (success) {
-        const ordinal = getOrdinalSuffix(guesses);
-        headerText = `${medal} FreezeTune 80s ${ordinal}/8`;
+        //const ordinal = getOrdinalSuffix(guesses);
+        headerText = `${medal} FreezeTune 80s ${guesses}/8`;
     } else {
         headerText = `${medal} FreezeTune 80s not solved`;
     }
