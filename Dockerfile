@@ -9,7 +9,7 @@ COPY . ./
 
 RUN dotnet restore
 # Build and publish a release
-RUN dotnet publish -f net9.0 -c Release -o out
+RUN dotnet publish -f net9.0 -c Release -o out -p:StaticWebAssetsEnabled=false
 
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
