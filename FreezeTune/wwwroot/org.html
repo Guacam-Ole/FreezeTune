@@ -25,14 +25,42 @@
             gap: 8px;
             margin-top: 20px;
         }
+        .images-grid .image-wrapper {
+            position: relative;
+            cursor: pointer;
+        }
         .images-grid img {
             width: 100%;
             height: auto;
             border-radius: 4px;
-            cursor: pointer;
         }
-        .images-grid img:hover {
+        .images-grid .image-wrapper:hover img {
             opacity: 0.8;
+        }
+        .images-grid .image-wrapper.selected img {
+            border: 3px solid var(--success-color);
+        }
+        .images-grid .selection-number {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            background: var(--success-color);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .selected-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: var(--background);
+            border-radius: 8px;
+            color: var(--text-secondary);
         }
     </style>
 </head>
@@ -45,7 +73,7 @@
         <div class="maintenance-screen">
             <div class="input-group">
                 <label for="date">Date</label>
-                <input type="text" id="date" name="date" readonly>
+                <input type="text" id="date" name="date" placeholder="dd.MM.yyyy">
             </div>
 
             <div class="input-group">
@@ -71,6 +99,12 @@
             </div>
 
             <div id="images-grid" class="images-grid"></div>
+
+            <div id="selected-info" class="selected-info" style="display: none;">
+                Selected: <span id="selected-count">0</span>/8
+            </div>
+
+            <button type="button" class="submit-btn" id="add-video-btn" style="display: none; margin-top: 20px;">Add Video</button>
         </div>
 
         <div id="error-message" class="error-message hidden"></div>

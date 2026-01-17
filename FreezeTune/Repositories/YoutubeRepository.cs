@@ -45,11 +45,11 @@ public class YoutubeRepository : IYoutubeRepository
         };
     }
 
-    public void MoveImages(string category, DateOnly date, Dictionary<int, int> frames)
+    public void CopyImages(string category, DateOnly date, Dictionary<int, int> frames)
     {
         foreach (var frame in frames)
         {
-            File.Move(GetImagePathFor(date, category, "tmp", frame.Value), GetImagePathFor(date,category,"img", frame.Key));
+            File.Copy(GetImagePathFor(date, category, "tmp", frame.Value), GetImagePathFor(date,category,"img", frame.Key), true);
         }
         // TODO: Delete old temp files
     }

@@ -41,7 +41,7 @@ public class MaintenanceController : ControllerBase
         return _maintenanceLogic.GetTmpImages(category, video);
     }
     
-    [HttpPost]
+    [HttpPost("Store")]
     public bool Store(string apiKey, string category, [FromBody] Models.Video video)
     {
         if (!IsValidKey(apiKey)) throw new Exception("Wrong key");

@@ -44,13 +44,13 @@ public class MaintenanceLogic:IMaintenanceLogic
 
     public void Add(string category, Models.Video video)
     {
-        var imageMove = new Dictionary<int, int>();
+        var imageCopy = new Dictionary<int, int>();
         var counter = 0;
         foreach (var videoImageId in video.ImageIds)
         {
-            imageMove.Add(counter++, videoImageId);
+            imageCopy.Add(counter++, videoImageId);
         }
-        _ytRepository.MoveImages(category, video.Date, imageMove);
+        _ytRepository.CopyImages(category, video.Date, imageCopy);
         _dbRepository.Upsert(new Daily
         {
             Category = category,
