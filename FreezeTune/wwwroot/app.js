@@ -482,17 +482,20 @@ function generateShareText() {
         if (guesses === 1) medal = '🥇';
         else if (guesses === 2) medal = '🥈';
         else if (guesses === 3) medal = '🥉';
+        else medal='🏅';
+    } else {
+        medal='🫤';
     }
 
     let headerText;
     if (success) {
         const ordinal = getOrdinalSuffix(guesses);
-        headerText = `${medal}🎬 I finished the FreezeTune Daily 80s Music Quiz on the ${ordinal} guess \\o/ | ${date}`;
+        headerText = `${medal} FreezeTune 80s ${ordinal}/8`;
     } else {
-        headerText = `🎬 I did not success in the FreezeTune Daily 80s Music Quiz | ${date}`;
+        headerText = `${medal} FreezeTune 80s not solved`;
     }
 
-    return `${headerText}\n${emojiChain}\n\nhttp://freezetune.com\n#FreezeTune`;
+    return `${headerText}\n${emojiChain}\n\nfreezetune.com\n#FreezeTune`;
 }
 
 // Share results function
