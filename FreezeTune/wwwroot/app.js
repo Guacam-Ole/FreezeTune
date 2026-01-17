@@ -3,6 +3,53 @@ let currentGuessCount = 0;
 let maxGuesses = 8;
 let currentCategory = '80s';
 
+// LocalStorage key for game state
+const STORAGE_KEY = 'freezetune_game_state';
+
+// Get today's date as string for comparison
+function getTodayString() {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+// Save game state to localStorage
+function saveGameState(completed = false, matchData = null) {
+    const state = {
+        date: getTodayString(),
+        category: currentCategory,
+        guessCount: currentGuessCount,
+        completed: completed,
+        match: matchData,
+        lastGameResult: lastGameResult
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+// Load game state from localStorage
+function loadGameState() {
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) return null;
+
+        const state = JSON.parse(saved);
+        // Only return state if it's for today and the same category
+        if (state.date === getTodayString() && state.category === currentCategory) {
+            return state;
+        }
+        // Clear old state
+        localStorage.removeItem(STORAGE_KEY);
+        return null;
+    } catch (e) {
+        console.error('Error loading game state:', e);
+        return null;
+    }
+}
+
+// Clear game state
+function clearGameState() {
+    localStorage.removeItem(STORAGE_KEY);
+}
+
 // DOM elements
 const gameScreen = document.getElementById('game-screen');
 const successScreen = document.getElementById('success-screen');
@@ -38,8 +85,78 @@ window.addEventListener('DOMContentLoaded', () => {
     if (categorySelect) {
         currentCategory = categorySelect.value;
     }
-    startNewGame();
+    initializeGame();
 });
+
+// Initialize or resume game
+async function initializeGame() {
+    const savedState = loadGameState();
+
+    if (savedState) {
+        // Restore last game result for sharing
+        if (savedState.lastGameResult) {
+            lastGameResult = savedState.lastGameResult;
+        }
+
+        // If game was completed, show the result screen
+        if (savedState.completed && savedState.match) {
+            currentGuessCount = savedState.guessCount;
+            showSuccess(savedState.match, savedState.guessCount);
+            return;
+        }
+
+        // If game is in progress, resume from saved position
+        if (savedState.guessCount > 0) {
+            await resumeGame(savedState.guessCount);
+            return;
+        }
+    }
+
+    // No saved state or fresh game, start new
+    startNewGame();
+}
+
+// Resume game from a specific guess count
+async function resumeGame(guessCount) {
+    currentGuessCount = guessCount;
+    clearFeedback();
+    clearInputs();
+    hideSuccessScreen();
+    showGameScreen();
+
+    try {
+        // Use POST with empty values to get the current image
+        const guessData = {
+            Interpret: '',
+            Title: '',
+            GuessCount: guessCount
+        };
+
+        const response = await fetch(`/image?category=${encodeURIComponent(currentCategory)}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(guessData)
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        // Load the image for the current guess position
+        if (result.nextPictureContents) {
+            loadImage(result.nextPictureContents);
+            updateProgress(result.nextPicture);
+        }
+    } catch (error) {
+        showError('Failed to resume game. Starting fresh.');
+        console.error('Error resuming game:', error);
+        startNewGame();
+    }
+}
 
 // Event listeners
 guessForm.addEventListener('submit', handleGuessSubmit);
@@ -136,6 +253,9 @@ function handleGuessResult(result) {
         showSuccess(result.match, result.guesses);
         return;
     }
+
+    // Save game state after each incorrect guess
+    saveGameState(false, null);
 
     // Show feedback for partial correctness
     showFeedback(result.interpretCorrect, result.titleCorrect);
@@ -251,6 +371,9 @@ function showSuccess(match, guesses) {
         guesses: guesses,
         success: guesses < 8
     };
+
+    // Save completed game state
+    saveGameState(true, match);
 
     // Update header based on whether they won or lost
     const successHeader = document.querySelector('.success-header h2');
