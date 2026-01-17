@@ -27,11 +27,11 @@ public class UserLogic:IUserLogic
             new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day));
         if (todaysRiddle == null) throw new Exception("Data is missing");
 
-        var levInterpret = new Levenshtein(todaysRiddle.Interpret);
-        var levTitle = new Levenshtein(todaysRiddle.Title);
+        var levInterpret = new Levenshtein(todaysRiddle.Interpret.ToLower());
+        var levTitle = new Levenshtein(todaysRiddle.Title.ToLower());
 
-        var levInterpretValue = levInterpret.DistanceFrom(guess.Interpret);
-        var levTitleValue = levTitle.DistanceFrom(guess.Title);
+        var levInterpretValue = levInterpret.DistanceFrom(guess.Interpret.ToLower());
+        var levTitleValue = levTitle.DistanceFrom(guess.Title.ToLower());
 
         var result = new CalculationResult
         {
