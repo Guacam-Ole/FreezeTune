@@ -89,3 +89,4 @@ bin
 obj
 *.user
 .idea
+docker-compose.yml
