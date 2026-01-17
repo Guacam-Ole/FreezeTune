@@ -40,7 +40,15 @@ public class UserLogic:IUserLogic
             LevenshteinInterpret = levInterpretValue,
             LevenshteinTitle = levTitleValue,
         };
-        if (result.InterpretMatch && result.TitleMatch) result.Match = todaysRiddle;
+        if (result.InterpretMatch && result.TitleMatch)
+        {
+            result.Match = todaysRiddle;
+            _databaseRepository.AddStats(category, guess.GuessCount, true);
+        }
+        else if (guess.GuessCount==8)
+        {
+            _databaseRepository.AddStats(category, guess.GuessCount, false);
+        }
         return result;
     }
 }
