@@ -6,14 +6,15 @@ namespace FreezeTune.Logic;
 
 public class UserLogic:IUserLogic
 {
-    private const int _maxDistance = 4;
+    private readonly uint _maxDistance;
     private readonly IDatabaseRepository _databaseRepository;
     private readonly IImageRepository _imageRepositor;
 
-    public UserLogic(IDatabaseRepository databaseRepository, IImageRepository imageRepositor)
+    public UserLogic(IDatabaseRepository databaseRepository, IImageRepository imageRepositor, Config config)
     {
         _databaseRepository = databaseRepository;
         _imageRepositor = imageRepositor;
+        _maxDistance = config.MaxDistance;
     }
     
     public string GetImage(string category, DateOnly date, int currentNumber)
