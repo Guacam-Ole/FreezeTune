@@ -2,8 +2,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FreezeTune", "FreezeTune\FreezeTune.csproj", "{C34C75FD-2994-425E-8584-30029308A1B2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CreateData", "CreateData\CreateData.csproj", "{B248F558-3217-4420-97AF-3FF448FCDBD9}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -14,9 +12,5 @@ Global
 		{C34C75FD-2994-425E-8584-30029308A1B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C34C75FD-2994-425E-8584-30029308A1B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C34C75FD-2994-425E-8584-30029308A1B2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B248F558-3217-4420-97AF-3FF448FCDBD9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B248F558-3217-4420-97AF-3FF448FCDBD9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B248F558-3217-4420-97AF-3FF448FCDBD9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B248F558-3217-4420-97AF-3FF448FCDBD9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
