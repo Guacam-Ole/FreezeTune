@@ -20,7 +20,7 @@ services:
 
 Replace FREEZEAPIKEY with something meaningful.
 
-It will be required when calling orga.html
+It will be required when calling org.html
 
 the `data` directory must contain the following subfolders:
 `vid`
