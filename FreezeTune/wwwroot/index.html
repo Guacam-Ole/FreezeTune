@@ -23,12 +23,34 @@
     <meta name="twitter:description" content="Can you guess the 80s song from a single freeze frame? Test your music knowledge with FreezeTune's daily challenge!">
     <meta name="twitter:image" content="https://freezetune.com/og-image.jpg">
 
-    <!-- Additional meta -->
+
+    <!-- SEO-Gedöns -->
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Game",
+  "name": "FreezeTune 80s Music Quiz",
+  "description": "Can you guess the 80s song from a single freeze frame? Test your music knowledge with FreezeTune's daily challenge!",
+  "url": "https://freezetune.com/",
+  "image": "https://freezetune.com/og-image.jpg",
+  "genre": "Music Quiz",
+  "gamePlatform": "Web browser",
+  "numberOfPlayers": "1",
+  "audience": {
+    "@type": "PeopleAudience",
+    "suggestedMinAge": "13"
+  }
+}
+</script>
+    
+    
     <meta name="theme-color" content="#6366f1">
     <link rel="canonical" href="https://freezetune.com/">
 
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" type="image/png" href="http://freezetune.com/favicon.png" />
+
+
 </head>
 <body>
     <div class="container">
@@ -44,7 +66,7 @@
             </div>
 
             <div class="image-container">
-                <img id="game-image" src="" alt="Guess the song" class="game-image">
+                <img id="game-image" src="" alt="Music video freeze frame for 80s song quiz" class="game-image">
                 <div class="image-loader" id="image-loader">
                     <div class="spinner"></div>
                     <p>Loading...</p>
