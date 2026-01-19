@@ -490,9 +490,9 @@ function generateShareText() {
     let headerText;
     if (success) {
         //const ordinal = getOrdinalSuffix(guesses);
-        headerText = `${medal} FreezeTune 80s ${guesses}/8`;
+        headerText = `${medal} FreezeTune 80s ${guesses}/8 | ${date}`;
     } else {
-        headerText = `${medal} FreezeTune 80s not solved`;
+        headerText = `${medal} FreezeTune 80s not solved | ${date}`;
     }
 
     return `${headerText}\n${emojiChain}\n\nfreezetune.com\n#FreezeTune`;
