@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+
+Disallow: /stats/
+
+Sitemap: https://freezetune.com/sitemap.xml
