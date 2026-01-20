@@ -424,6 +424,30 @@ header h1 {
     }
 }
 
+/* Footer */
+.site-footer {
+    text-align: center;
+    margin-top: 35px;
+    margin-bottom: 5px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    opacity: 0.7;
+}
+
+.site-footer a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.site-footer a:hover {
+    color: var(--primary-color);
+}
+
+.footer-sep {
+    margin: 0 8px;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
     header h1 {
