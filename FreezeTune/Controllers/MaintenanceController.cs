@@ -7,16 +7,21 @@ namespace FreezeTune.Controllers;
 public class MaintenanceController : ControllerBase
 {
     private readonly IMaintenanceLogic _maintenanceLogic;
+    private readonly Config _config;
 
-    public MaintenanceController(IMaintenanceLogic maintenanceLogic)
+    public MaintenanceController(IMaintenanceLogic maintenanceLogic, Config config)
     {
         _maintenanceLogic = maintenanceLogic;
+        _config = config;
     }
 
-    private bool IsValidKey(string key)
+    private void ValidateKey(string category, string key)
     {
-        var requiredKey = Environment.GetEnvironmentVariable("FREEZEAPIKEY");
-        return key == requiredKey;
+        if (!_config.Categories.Contains(category)) throw new Exception("Wrong Catgory");
+        var masterKey = Environment.GetEnvironmentVariable("FREEZEAPIKEY");
+        if (key == masterKey) return;
+        if (_config.CategoryKeys==null || !_config.CategoryKeys.ContainsKey(category)) return;
+        if (_config.CategoryKeys[category] != key) throw new Exception("Wrong Key");
     }
 
     [HttpGet("Date")]
@@ -30,7 +35,7 @@ public class MaintenanceController : ControllerBase
     {
         try
         {
-            if (!IsValidKey(apiKey)) throw new Exception("Wrong key");
+            ValidateKey(category, apiKey);
 
             return await _maintenanceLogic.Download(category, video);
         }
@@ -44,7 +49,7 @@ public class MaintenanceController : ControllerBase
     [HttpPost("Temp")]
     public Dictionary<int,string> GetTempImages(string apiKey, string category, [FromBody] Models.Video video)
     {
-        if (!IsValidKey(apiKey)) throw new Exception("Wrong key");
+        ValidateKey(category, apiKey);
 
         return _maintenanceLogic.GetTmpImages(category, video);
     }
@@ -52,7 +57,7 @@ public class MaintenanceController : ControllerBase
     [HttpPost("Store")]
     public bool Store(string apiKey, string category, [FromBody] Models.Video video)
     {
-        if (!IsValidKey(apiKey)) throw new Exception("Wrong key");
+        ValidateKey(category, apiKey);
         _maintenanceLogic.Add(category, video) ;
         return true;
     }
