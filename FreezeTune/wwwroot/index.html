@@ -63,17 +63,17 @@
         </header>
 
         <div id="game-screen" class="game-screen">
-            <div class="progress-bar">
-                <div class="progress-fill" id="progress-fill"></div>
-                <div class="progress-text" id="progress-text">Image 1 of 8</div>
-            </div>
-
             <div class="image-container">
                 <img id="game-image" src="" alt="Music video freeze frame for 80s song quiz" class="game-image">
                 <div class="image-loader" id="image-loader">
                     <div class="spinner"></div>
                     <p>Loading...</p>
                 </div>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+                <div class="progress-text" id="progress-text">Image 1 of 8</div>
             </div>
 
             <form id="guess-form" class="guess-form">
@@ -146,10 +146,22 @@
 
                 <button id="share-results-btn" class="share-results-btn">Share Results</button>
                 <p class="share-hint">Click to copy to clipboard</p>
+
+                <footer class="site-footer">
+                    <a href="https://chaos.social/@guacamole" target="_blank" rel="noopener" title="@guacamole@chaos.social">written by @guacamole@chaos.social</a>
+                    <span class="footer-sep">|</span>
+                    <a href="https://github.com/Guacam-Ole/FreezeTune/issues" target="_blank" rel="noopener" title="Bugs, Suggestions, Feedback">Feedback</a>
+                </footer>
             </div>
         </div>
 
         <div id="error-message" class="error-message hidden"></div>
+
+<!--        <footer class="site-footer">-->
+<!--            <a href="https://chaos.social/@guacamole" target="_blank" rel="noopener" title="@guacamole@chaos.social">Written by @guacamole@chaos.social</a>-->
+<!--            <span class="footer-sep">|</span>-->
+<!--            <a href="https://github.com/Guacam-Ole/FreezeTune/issues" target="_blank" rel="noopener" title="Bugs, Suggestions, Feedback">Any suggestions</a>-->
+<!--        </footer>-->
     </div>
 
     <script src="app.js"></script>
