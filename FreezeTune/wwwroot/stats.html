@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FreezeTune - Statistics</title>
+    <meta name="description" content="View statistics for FreezeTune 80s Music Quiz">
+    <meta name="author" content="Ole Albers">
+    <meta name="theme-color" content="#6366f1">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/png" href="http://freezetune.com/favicon.png" />
+    <script src="plotly.js"></script>
+    <style>
+        .stats-container {
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        .stats-screen {
+            background: var(--surface);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .chart-container {
+            background: var(--background);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        #stats-chart {
+            width: 100%;
+            height: 500px;
+        }
+
+        .stats-loader {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 500px;
+            color: var(--text-secondary);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 24px;
+            background: var(--surface-light);
+            color: var(--text-primary);
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .back-link:hover {
+            background: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .category-select {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .category-select label {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .category-select select {
+            padding: 10px 14px;
+            font-size: 0.95rem;
+            background: var(--background);
+            border: 2px solid var(--surface-light);
+            border-radius: 8px;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .category-select select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .chart-legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 4px;
+            border-radius: 2px;
+        }
+
+        .legend-color.blue { background: #6366f1; }
+        .legend-color.green { background: #10b981; }
+        .legend-color.red { background: #ef4444; }
+
+        @media (max-width: 600px) {
+            .stats-screen {
+                padding: 15px;
+            }
+
+            #stats-chart {
+                height: 400px;
+            }
+
+            .chart-container {
+                padding: 10px;
+            }
+
+            .chart-legend {
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container stats-container">
+        <header>
+            <h1>FreezeTune Statistics</h1>
+            <p class="subtitle">Daily game performance</p>
+        </header>
+
+        <div class="stats-screen">
+            <div class="category-select">
+                <label for="category">Category:</label>
+                <select id="category" name="category">
+                    <option value="80s">80s</option>
+                </select>
+            </div>
+
+            <div class="chart-container">
+                <div id="stats-loader" class="stats-loader">
+                    <div class="spinner"></div>
+                    <p>Loading statistics...</p>
+                </div>
+                <div id="stats-chart"></div>
+            </div>
+
+            <div class="chart-legend">
+                <div class="legend-item">
+                    <span class="legend-color blue"></span>
+                    <span>Avg. Guesses</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color green"></span>
+                    <span>Successes</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color red"></span>
+                    <span>Failures</span>
+                </div>
+            </div>
+
+            <a href="/" class="back-link">← Back to Game</a>
+        </div>
+
+        <div id="error-message" class="error-message hidden"></div>
+    </div>
+
+    <script src="stats.js"></script>
+</body>
+</html>
