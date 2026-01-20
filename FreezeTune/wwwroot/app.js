@@ -457,15 +457,15 @@ function formatDate() {
 // Generate emoji chain for share text
 function generateEmojiChain(guesses, success) {
     const filmEmoji = '🎞️';
-    const arrowEmoji = '➜';
+    //const arrowEmoji = '➜';
     const successEmoji = '🎵';
     const failEmoji = '🔇';
 
     let chain = filmEmoji;
     for (let i = 1; i < guesses; i++) {
-        chain += ` ${arrowEmoji} ${filmEmoji}`;
+        chain += `  ${filmEmoji}`;
     }
-    chain += ` ${arrowEmoji} ${success ? successEmoji : failEmoji}`;
+    chain += `  ${success ? successEmoji : failEmoji}`;
 
     return chain;
 }
