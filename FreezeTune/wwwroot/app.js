@@ -411,7 +411,7 @@ function convertToEmbedUrl(url) {
         return url; // Already an embed URL
     }
 
-    return `https://www.youtube.com/embed/${videoId}?autoplay=0`;
+    return `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=0`;
 }
 
 // Hide success screen

@@ -7,7 +7,7 @@ namespace FreezeTune.Logic;
 
 public class MaintenanceLogic:IMaintenanceLogic
 {
-    private const int NumberOfFrames = 40;
+    private const int NumberOfFrames = 56;
     private readonly IDatabaseRepository _dbRepository;
     private readonly IYoutubeRepository _ytRepository;
     private readonly IImageRepository _imageRepositor;
