@@ -31,7 +31,7 @@ public class MaintenanceLogic:IMaintenanceLogic
         };
     }
 
-    public async Task<Models.Video> Download(string category, Models.Video video)
+    public async Task<Video> Download(string category, Models.Video video)
     {
         return await _ytRepository.DownloadNFrames(video.Url, video.Date, category, NumberOfFrames);
     }
@@ -42,15 +42,12 @@ public class MaintenanceLogic:IMaintenanceLogic
     }
 
 
-    public void Add(string category, Models.Video video)
+    public void Add(string category, Video video)
     {
-        var imageCopy = new Dictionary<int, int>();
         var counter = 0;
-        foreach (var videoImageId in video.ImageIds)
-        {
-            imageCopy.Add(counter++, videoImageId);
-        }
+        var imageCopy = video.ImageIds.ToDictionary(_ => counter++);
         _ytRepository.CopyImages(category, video.Date, imageCopy);
+        _ytRepository.MoveVideoFile(video);
         _dbRepository.Upsert(new Daily
         {
             Category = category,
