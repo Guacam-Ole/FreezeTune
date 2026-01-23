@@ -9,10 +9,10 @@ public class MaintenanceLogic:IMaintenanceLogic
 {
     private const int NumberOfFrames = 56;
     private readonly IDatabaseRepository _dbRepository;
-    private readonly IYoutubeRepository _ytRepository;
+    private readonly IVideoRepository _ytRepository;
     private readonly IImageRepository _imageRepositor;
 
-    public MaintenanceLogic(IDatabaseRepository dbRepository, IYoutubeRepository ytRepository, IImageRepository imageRepositor)
+    public MaintenanceLogic(IDatabaseRepository dbRepository, IVideoRepository ytRepository, IImageRepository imageRepositor)
     {
         _dbRepository = dbRepository;
         _ytRepository = ytRepository;
@@ -47,7 +47,7 @@ public class MaintenanceLogic:IMaintenanceLogic
         var counter = 0;
         var imageCopy = video.ImageIds.ToDictionary(_ => counter++);
         _ytRepository.CopyImages(category, video.Date, imageCopy);
-        _ytRepository.MoveVideoFile(video);
+        _ytRepository.MoveVideoFile(category, video);
         _dbRepository.Upsert(new Daily
         {
             Category = category,

@@ -59,6 +59,14 @@ async function handleDownload() {
         }
 
         const result = await response.json();
+
+        // Check for error in response (handle both camelCase and PascalCase)
+        const errorMsg = result.error || result.Error;
+        if (errorMsg) {
+            showError(errorMsg);
+            return;
+        }
+
         interpretInput.value = result.interpret || '';
         titleInput.value = result.title || '';
 

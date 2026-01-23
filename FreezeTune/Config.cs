@@ -9,4 +9,5 @@ public class Config
     
     public List<string> Categories { get; set; }= ["80s"];
     public Dictionary<string, string>? CategoryKeys { get; set; } = null;
+    public string YoutubeCookie { get; set; }="CAESEwgDEgk4MTA2NTYwMTIaAmVuIAEaBgiAmOfGBg";
 }

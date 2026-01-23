@@ -7,4 +7,5 @@ public class Video
     public string Interpret { get; set; }
     public string Title { get; set; }
     public DateOnly Date { get; set; }
+    public string? Error { get; set; }
 }
