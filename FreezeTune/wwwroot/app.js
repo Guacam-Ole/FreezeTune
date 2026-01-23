@@ -252,7 +252,8 @@ function handleGuessResult(result) {
 
     // Check if the user got it right (or ran out of guesses)
     if (result.match) {
-        showSuccess(result.match, result.guesses);
+        const wasCorrectGuess = result.interpretCorrect && result.titleCorrect;
+        showSuccess(result.match, result.guesses, wasCorrectGuess);
         return;
     }
 
@@ -272,10 +273,15 @@ function handleGuessResult(result) {
     submitBtn.disabled = false;
     submitBtn.textContent = 'Submit Guess';
 
-    // Clear incorrect inputs but keep correct ones
-    if (!result.interpretCorrect) {
+    // Display interpret hint if provided
+    const interpretHint = result.interpret;
+    if (interpretHint) {
+        interpretInput.value = interpretHint;
+    } else if (!result.interpretCorrect) {
         interpretInput.value = '';
     }
+
+    // Clear title if incorrect
     if (!result.titleCorrect) {
         titleInput.value = '';
     }
@@ -364,14 +370,17 @@ function updateProgress(imageNumber) {
 }
 
 // Show success screen
-function showSuccess(match, guesses) {
+function showSuccess(match, guesses, wasCorrectGuess = null) {
     gameScreen.classList.add('hidden');
     successScreen.classList.remove('hidden');
+
+    // Determine success: use wasCorrectGuess if provided, otherwise use saved lastGameResult
+    const success = wasCorrectGuess !== null ? wasCorrectGuess : lastGameResult.success;
 
     // Store result for sharing
     lastGameResult = {
         guesses: guesses,
-        success: guesses < 8
+        success: success
     };
 
     // Save completed game state
@@ -382,7 +391,7 @@ function showSuccess(match, guesses) {
     const successMessage = document.querySelector('.success-message');
     const guessCountElement = document.querySelector('.guess-count');
 
-    if (guesses >= 8) {
+    if (!success) {
         successHeader.textContent = 'Game Over!';
         successMessage.textContent = 'You ran out of guesses. Here\'s the answer:';
         guessCountElement.textContent = 'Better luck next time!';

@@ -30,7 +30,7 @@ public class ImagesController : Controller
             Match = guessResult.Match,
         };
 
-        if (guess.GuessCount >= 7 || result.InterpretCorrect)
+        if (guess.GuessCount >= 6 || result.InterpretCorrect)
         {
             // Hint interpret
             result.Interpret = guessResult.Interpret;
@@ -38,8 +38,6 @@ public class ImagesController : Controller
 
         if (result.Match != null) return result;
 
-
-        // If user has reached max guesses (8), return the correct answer
         if (guess.GuessCount >= 8)
         {
             result.Match = _databaseRepository.GetForDay(category, date);
