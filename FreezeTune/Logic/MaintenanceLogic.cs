@@ -47,14 +47,15 @@ public class MaintenanceLogic:IMaintenanceLogic
         var counter = 0;
         var imageCopy = video.ImageIds.ToDictionary(_ => counter++);
         _ytRepository.CopyImages(category, video.Date, imageCopy);
-        _ytRepository.MoveVideoFile(category, video);
+        var videoFile=_ytRepository.MoveVideoFile(category, video);
         _dbRepository.Upsert(new Daily
         {
             Category = category,
             Date = video.Date,
             Interpret = video.Interpret,
             Title = video.Title,
-            Url = video.Url
+            Url = video.Url,
+            VideoFile=videoFile
         });
     }
 }

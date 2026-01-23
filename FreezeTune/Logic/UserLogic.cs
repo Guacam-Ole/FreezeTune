@@ -9,11 +9,13 @@ public class UserLogic:IUserLogic
     private readonly uint _maxDistance;
     private readonly IDatabaseRepository _databaseRepository;
     private readonly IImageRepository _imageRepositor;
+    private readonly IVideoRepository _videoRepository;
 
-    public UserLogic(IDatabaseRepository databaseRepository, IImageRepository imageRepositor, Config config)
+    public UserLogic(IDatabaseRepository databaseRepository, IImageRepository imageRepositor, IVideoRepository videoRepository, Config config)
     {
         _databaseRepository = databaseRepository;
         _imageRepositor = imageRepositor;
+        _videoRepository = videoRepository;
         _maxDistance = config.MaxDistance;
     }
     
@@ -50,6 +52,19 @@ public class UserLogic:IUserLogic
         {
             _databaseRepository.AddStats(category, guess.GuessCount, false);
         }
+
+        result.Interpret = todaysRiddle.Interpret;
         return result;
+    }
+
+    public FileStream GetVideoFile(string filename, long? start)
+    {
+        var fileStream=_videoRepository.LoadVideoFromDisk(filename);
+        if (start != null)
+        {
+            fileStream.Seek(start.Value, SeekOrigin.Begin);
+        }
+
+        return fileStream;
     }
 }

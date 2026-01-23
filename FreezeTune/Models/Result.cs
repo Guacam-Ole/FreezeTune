@@ -7,5 +7,6 @@ public class Result
     public int? NextPicture { get; set; }
     public int Guesses { get; set; }
     public Daily? Match { get; set; }
-    public string NextPictureContents { get; set; }
+    public string NextPictureContents { get; set; } = string.Empty;
+    public string? Interpret { get; set; }
 }

@@ -108,18 +108,6 @@
                 Submit Guess
             </button>
         </form>
-
-        <!--            <div class="category-selector">-->
-        <!--                <label for="category">Category:</label>-->
-        <!--                <select id="category" name="category">-->
-        <!--                    <option value="80s">80s</option>-->
-        <!--                    <option value="90s">90s</option>-->
-        <!--                    <option value="2000s">2000s</option>-->
-        <!--                    <option value="rock">Rock</option>-->
-        <!--                    <option value="pop">Pop</option>-->
-        <!--                </select>-->
-        <!--                <button id="restart-btn" class="restart-btn">New Game</button>-->
-        <!--            </div>-->
     </div>
 
     <div id="success-screen" class="success-screen hidden">
@@ -135,19 +123,18 @@
                 <p class="guess-count">You got it in <span id="final-guess-count"></span> guess(es)!</p>
             </div>
 
+
+
             <div class="video-container">
-<!--                <video id="local-video" controls width="100%" height="400">-->
-<!--                    <source src="/shared-assets/videos/flower.mp4" type="video/mp4"/>-->
-<!--                </video>-->
-                                    <iframe
-                                        id="youtube-video"
-                                        width="100%"
-                                        height="400"
-                                        src=""
-                                        frameborder="0"
-                                        allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                        allowfullscreen>
-                                    </iframe>
+                <iframe
+                        id="youtube-video"
+                        width="100%"
+                        height="400"
+                        src=""
+                        frameborder="0"
+                        allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen>
+                </iframe>
             </div>
 
             <button id="share-results-btn" class="share-results-btn">Share Results</button>

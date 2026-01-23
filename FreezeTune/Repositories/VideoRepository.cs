@@ -1,7 +1,5 @@
-using System.Runtime.InteropServices.ComTypes;
 using CliWrap;
 using CliWrap.Buffered;
-using Flurl.Http;
 using FreezeTune.Models;
 using Xabe.FFmpeg;
 using YoutubeExplode;
@@ -55,17 +53,23 @@ public class VideoRepository : IVideoRepository
     }
 
 
-    public void MoveVideoFile(string category, Video video)
+    public string? MoveVideoFile(string category, Video video)
     {
-        if (File.Exists(GetVideoPathFor(category, video))) return;
+        if (File.Exists(GetVideoPathFor(category, video))) return null;
         var sourceFile = Directory.GetFiles(GetVideoCategoryPath(category)).First();
-        
-        File.Move(sourceFile, GetVideoPathFor(category, video));
-
-       
+        var targetFile = GetVideoPathFor(category, video);
+        File.Move(sourceFile,targetFile);
+        return targetFile;
     }
 
-  
+    public FileStream LoadVideoFromDisk(string videoPath)
+    {
+        if (!File.Exists(videoPath)) throw new Exception("File not found");
+        var videoInfo=new FileInfo(videoPath);
+        var fileStream = new FileStream(videoPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        return fileStream;
+    }
+
 
     private async Task<Video> ExtractFrames(string category, string url, DateOnly date, string author, string title,
         int numberOfFrames)
