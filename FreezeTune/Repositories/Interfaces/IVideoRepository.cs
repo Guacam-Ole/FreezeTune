@@ -8,5 +8,4 @@ public interface IVideoRepository
     void CopyImages(string category, DateOnly date, Dictionary<int, int> frames);
     string MoveVideoFile(string category, Video video);
 
-    FileStream LoadVideoFromDisk(string filename);
 }

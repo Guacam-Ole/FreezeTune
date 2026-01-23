@@ -56,15 +56,4 @@ public class UserLogic:IUserLogic
         result.Interpret = todaysRiddle.Interpret;
         return result;
     }
-
-    public FileStream GetVideoFile(string filename, long? start)
-    {
-        var fileStream=_videoRepository.LoadVideoFromDisk(filename);
-        if (start != null)
-        {
-            fileStream.Seek(start.Value, SeekOrigin.Begin);
-        }
-
-        return fileStream;
-    }
 }

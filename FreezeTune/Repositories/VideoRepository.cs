@@ -25,10 +25,14 @@ public class VideoRepository : IVideoRepository
         return $"{GetImagePath(subDir)}{category}-{date:yyyy-MM-dd}-{number}.png";
     }
 
-    private string CleanForPath(string value)
+    private static string CleanForPath(string value)
     {
-        // TODO: Clean Names
-        return value;
+        var invalidChars = Path.GetInvalidFileNameChars();
+
+        var sanitized = string.Join("_", value.Split(invalidChars,
+            StringSplitOptions.RemoveEmptyEntries));
+
+        return sanitized.TrimEnd('.', ' '); 
     }
 
     private string GetVideoPathFor(string category, Video video)
@@ -58,14 +62,13 @@ public class VideoRepository : IVideoRepository
         if (File.Exists(GetVideoPathFor(category, video))) return null;
         var sourceFile = Directory.GetFiles(GetVideoCategoryPath(category)).First();
         var targetFile = GetVideoPathFor(category, video);
-        File.Move(sourceFile,targetFile);
+        File.Move(sourceFile, targetFile);
         return targetFile;
     }
 
     public FileStream LoadVideoFromDisk(string videoPath)
     {
         if (!File.Exists(videoPath)) throw new Exception("File not found");
-        var videoInfo=new FileInfo(videoPath);
         var fileStream = new FileStream(videoPath, FileMode.Open, FileAccess.Read, FileShare.Read);
         return fileStream;
     }
@@ -83,7 +86,7 @@ public class VideoRepository : IVideoRepository
         }
 
         await ExtractSingleFrames(date, category, positions.ToArray());
-        
+
         return new Video
         {
             Date = date,
@@ -102,13 +105,13 @@ public class VideoRepository : IVideoRepository
             File.Delete(file);
         }
     }
-    
+
     public async Task<Video> DownloadNFrames(string url, DateOnly date, string category, int numberOfFrames)
     {
         string author;
         string title;
 
-         CleanTemp(category);
+        CleanTemp(category);
         if (url.Contains("youtube"))
             (author, title) = await DownloadVideoFromYoutube(category, url, date);
         else if (url.Contains("tidal"))
@@ -118,7 +121,6 @@ public class VideoRepository : IVideoRepository
         if (author == "auth") return new Video { Error = "Requires Tidal Token. Please auth in Docker" };
         return await ExtractFrames(category, url, date, author, title, numberOfFrames);
     }
-
 
 
     public void CopyImages(string category, DateOnly date, Dictionary<int, int> frames)
@@ -153,7 +155,8 @@ public class VideoRepository : IVideoRepository
             var streamInfo = manifest.GetVideoOnlyStreams().OrderBy(q => q.VideoResolution.Width)
                 .ThenBy(q => q.VideoResolution.Height)
                 .FirstOrDefault(q =>
-                    q.VideoResolution.Width >= _config.Width && q.VideoResolution.Height >= _config.Height) ?? manifest.GetVideoOnlyStreams().OrderByDescending(q => q.VideoResolution.Width)
+                    q.VideoResolution.Width >= _config.Width && q.VideoResolution.Height >= _config.Height) ?? manifest
+                .GetVideoOnlyStreams().OrderByDescending(q => q.VideoResolution.Width)
                 .ThenByDescending(q => q.VideoResolution.Height)
                 .First();
 
@@ -174,16 +177,16 @@ public class VideoRepository : IVideoRepository
     {
         const string shellCommand = "tidal-dl-ng";
         const string shellConfig = "cfg";
-            
+
         try
         {
-             await Cli.Wrap(shellCommand)
+            await Cli.Wrap(shellCommand)
                 .WithArguments([
                     shellConfig, "download_base_path",
                     "" + GetVideoCategoryPath(category) + ""
                 ])
                 .ExecuteBufferedAsync();
-            
+
             await Cli.Wrap(shellCommand)
                 .WithArguments([
                     shellConfig, "format_video",
@@ -196,7 +199,7 @@ public class VideoRepository : IVideoRepository
 
             try
             {
-                 await Cli.Wrap("tidal-dl-ng")
+                await Cli.Wrap("tidal-dl-ng")
                     .WithArguments(["login"])
                     .ExecuteBufferedAsync(cts.Token);
             }
@@ -204,18 +207,18 @@ public class VideoRepository : IVideoRepository
             {
                 return ("auth", "auth! das Spiel ist auth!");
             }
-            
-          
-            var response=await Cli.Wrap(shellCommand)
+
+
+            var response = await Cli.Wrap(shellCommand)
                 .WithArguments([
                     "dl", tidalUrl
                 ])
                 .ExecuteBufferedAsync();
 
             if (!response.IsSuccess) throw new Exception("Download failed");
-            
+
             var downloadedFiles = Directory.GetFiles(GetVideoCategoryPath(category), $"{date:yyyy-MM-dd}*.mp4");
-            var match = downloadedFiles.OrderByDescending(q=>q) .First();
+            var match = downloadedFiles.OrderByDescending(q => q).First();
             var rightpart = match.Substring(match.IndexOf("|||", StringComparison.CurrentCulture) + 3);
             var parts = rightpart.Split("||");
 
@@ -247,11 +250,5 @@ public class VideoRepository : IVideoRepository
             Console.WriteLine(e);
             throw;
         }
-    }
-
-    public List<string> GetImagesFor(DateOnly date, string category)
-    {
-        var files = Directory.GetFiles($"{_config.BasePath}/img/ {category}-{date:yyyy-MM-dd}-*.png");
-        return files.ToList();
     }
 }
