@@ -146,8 +146,11 @@ public class VideoRepository : IVideoRepository
             var manifest = await youtube.Videos.Streams.GetManifestAsync(youtubeUrl);
             var streamInfo = manifest.GetVideoOnlyStreams().OrderBy(q => q.VideoResolution.Width)
                 .ThenBy(q => q.VideoResolution.Height)
-                .First(q =>
-                    q.VideoResolution.Width >= _config.Width && q.VideoResolution.Height >= _config.Height);
+                .FirstOrDefault(q =>
+                    q.VideoResolution.Width >= _config.Width && q.VideoResolution.Height >= _config.Height) ?? manifest.GetVideoOnlyStreams().OrderByDescending(q => q.VideoResolution.Width)
+                .ThenByDescending(q => q.VideoResolution.Height)
+                .First();
+
             var videoContents = await youtube.Videos.GetAsync(youtubeUrl);
             await youtube.Videos.Streams.DownloadAsync(streamInfo,
                 GetTempVideoPathFor(category, date, videoContents.Author.ChannelTitle, videoContents.Title));
