@@ -72,6 +72,8 @@ const successInterpret = document.getElementById('success-interpret');
 const successTitle = document.getElementById('success-title');
 const finalGuessCount = document.getElementById('final-guess-count');
 const youtubeVideo = document.getElementById('youtube-video');
+const localVideo = document.getElementById('local-video');
+const localVideoSource = document.getElementById('local-video-source');
 const shareResultsBtn = document.getElementById('share-results-btn');
 
 // Store the last game result for sharing
@@ -393,9 +395,26 @@ function showSuccess(match, guesses) {
     successInterpret.textContent = match.interpret;
     successTitle.textContent = match.title;
 
-    // Convert YouTube URL to embed URL
-    const embedUrl = convertToEmbedUrl(match.url);
-    youtubeVideo.src = embedUrl;
+    // Check if local video file exists (handle both camelCase and PascalCase)
+    const videoFile = match.videoFile || match.VideoFile;
+    if (videoFile) {
+        // Show local video, hide YouTube iframe
+        youtubeVideo.classList.add('hidden');
+        localVideo.classList.remove('hidden');
+
+        // Build stream URL with guess parameters for validation
+        const streamUrl = `/Image/Stream?category=${encodeURIComponent(currentCategory)}&Interpret=${encodeURIComponent(match.interpret)}&Title=${encodeURIComponent(match.title)}&GuessCount=${guesses}`;
+        localVideoSource.src = streamUrl;
+        localVideo.load();
+    } else {
+        // Show YouTube iframe, hide local video
+        localVideo.classList.add('hidden');
+        youtubeVideo.classList.remove('hidden');
+
+        // Convert YouTube URL to embed URL
+        const embedUrl = convertToEmbedUrl(match.url);
+        youtubeVideo.src = embedUrl;
+    }
 }
 
 // Convert YouTube URL to embed URL
@@ -417,7 +436,9 @@ function convertToEmbedUrl(url) {
 // Hide success screen
 function hideSuccessScreen() {
     successScreen.classList.add('hidden');
-    youtubeVideo.src = ''; // Stop video playback
+    youtubeVideo.src = ''; // Stop YouTube playback
+    localVideo.pause(); // Stop local video playback
+    localVideoSource.src = '';
 }
 
 // Show game screen

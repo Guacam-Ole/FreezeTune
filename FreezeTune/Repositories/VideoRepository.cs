@@ -95,6 +95,8 @@ public class VideoRepository : IVideoRepository
 
     private void CleanTemp(string category)
     {
+        var path = GetVideoCategoryPath(category);
+        if (!Path.Exists(path)) return;
         foreach (var file in Directory.GetFiles(GetVideoCategoryPath(category)))
         {
             File.Delete(file);
