@@ -27,3 +27,11 @@ the `data` directory must contain the following subfolders:
 `img`
 `tmp`
 `db`
+
+## Tidal
+If you want to use Tidal (instead of Youtube) as a video source you have to authenticate once in a while. Just call
+```
+docker exec -it freezetune-freezetune-1 tidal-dl-ng login
+```
+
+(The docker name might vary a bit) and follow the instructions
