@@ -9,10 +9,10 @@ public class MaintenanceLogic:IMaintenanceLogic
 {
     private const int NumberOfFrames = 56;
     private readonly IDatabaseRepository _dbRepository;
-    private readonly IYoutubeRepository _ytRepository;
+    private readonly IVideoRepository _ytRepository;
     private readonly IImageRepository _imageRepositor;
 
-    public MaintenanceLogic(IDatabaseRepository dbRepository, IYoutubeRepository ytRepository, IImageRepository imageRepositor)
+    public MaintenanceLogic(IDatabaseRepository dbRepository, IVideoRepository ytRepository, IImageRepository imageRepositor)
     {
         _dbRepository = dbRepository;
         _ytRepository = ytRepository;
@@ -20,44 +20,42 @@ public class MaintenanceLogic:IMaintenanceLogic
     }
     
     
-    public Models.Video Init(string category)
+    public Video Init(string category)
     {
-        var lastDay = _dbRepository.AvailableUntil(category) ??
-                      new DateOnly(DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day);
+        var lastDay = _dbRepository.AvailableUntil(category) ?? new DateOnly(DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day).AddDays(-1);
 
-        return new Models.Video
+        return new Video
         {
             Date = lastDay.AddDays(1)
         };
     }
 
-    public async Task<Models.Video> Download(string category, Models.Video video)
+    public async Task<Video> Download(string category, Models.Video video)
     {
         return await _ytRepository.DownloadNFrames(video.Url, video.Date, category, NumberOfFrames);
     }
 
     public Dictionary<int, string> GetTmpImages(string category, Video video)
     {
-        return _imageRepositor.GetTempImages(category, video.Date, NumberOfFrames);
+        var lastTimeWeHad = _dbRepository.LastTimeWeHad(category, video.Interpret, video.Title);
+        return lastTimeWeHad.HasValue ? throw new Exception("We already had this") : _imageRepositor.GetTempImages(category, video.Date, NumberOfFrames);
     }
 
 
-    public void Add(string category, Models.Video video)
+    public void Add(string category, Video video)
     {
-        var imageCopy = new Dictionary<int, int>();
         var counter = 0;
-        foreach (var videoImageId in video.ImageIds)
-        {
-            imageCopy.Add(counter++, videoImageId);
-        }
+        var imageCopy = video.ImageIds.ToDictionary(_ => counter++);
         _ytRepository.CopyImages(category, video.Date, imageCopy);
+        var videoFile=_ytRepository.MoveVideoFile(category, video);
         _dbRepository.Upsert(new Daily
         {
             Category = category,
             Date = video.Date,
             Interpret = video.Interpret,
             Title = video.Title,
-            Url = video.Url
+            Url = video.Url,
+            VideoFile=videoFile
         });
     }
 }

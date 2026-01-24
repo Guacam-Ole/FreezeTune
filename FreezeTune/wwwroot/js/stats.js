@@ -5,6 +5,33 @@ const statsChart = document.getElementById('stats-chart');
 const statsLoader = document.getElementById('stats-loader');
 const errorMessage = document.getElementById('error-message');
 
+async function loadCategories() {
+    try {
+        const response = await fetch('/Image/Categories');
+        if (!response.ok) {
+            throw new Error('Failed to load categories');
+        }
+
+        const categories = await response.json();
+
+        categorySelect.innerHTML = '';
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category;
+            option.textContent = category;
+            categorySelect.appendChild(option);
+        });
+
+        // Load stats for the first category
+        if (categories.length > 0) {
+            loadStats(categories[0]);
+        }
+    } catch (error) {
+        showError('Failed to load categories: ' + error.message);
+        console.error('Error loading categories:', error);
+    }
+}
+
 async function loadStats(category) {
     statsLoader.classList.remove('hidden');
     statsChart.innerHTML = '';
@@ -55,18 +82,16 @@ function renderChart(data) {
     // Calculate average guesses for each day
     const avgGuesses = data.map(d => calculateAverageGuesses(d.guessToSuccess));
 
-    // Average guesses trace (left Y-axis) - blue
+    // Average guesses trace (left Y-axis) - blue bars
     const avgGuessesTrace = {
         x: dates,
         y: avgGuesses,
-        type: 'scatter',
-        mode: 'lines+markers',
+        type: 'bar',
         name: 'Avg. Guesses',
-        line: { color: '#6366f1', width: 3 },
-        marker: { size: 8 },
+        marker: { color: '#6366f1', opacity: 0.7 },
         yaxis: 'y',
         showlegend: false,
-        hovertemplate: '%{y}<extra></extra>'
+        hovertemplate: 'Avg: %{y}<extra></extra>'
     };
 
     // Successes trace (right Y-axis) - green
@@ -97,7 +122,21 @@ function renderChart(data) {
         hovertemplate: '%{y}<extra></extra>'
     };
 
-    const allTraces = [avgGuessesTrace, successesTrace, failuresTrace];
+    // Total trace (right Y-axis) - yellow/orange
+    const totalTrace = {
+        x: dates,
+        y: data.map(d => (d.successes || 0) + (d.failures || 0)),
+        type: 'scatter',
+        mode: 'lines+markers',
+        name: 'Total Players',
+        line: { color: '#f59e0b', width: 3 },
+        marker: { size: 8 },
+        yaxis: 'y2',
+        showlegend: false,
+        hovertemplate: '%{y}<extra></extra>'
+    };
+
+    const allTraces = [avgGuessesTrace, successesTrace, failuresTrace, totalTrace];
 
     // Calculate default range (last 7 days)
     const endDate = new Date(dates[dates.length - 1]);
@@ -122,10 +161,10 @@ function renderChart(data) {
             range: [startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]]
         },
         yaxis: {
-            title: 'Avg. Guesses',
-            gridcolor: '#334155',
-            side: 'left',
-            range: [1, 8]
+            showticklabels: false,
+            showgrid: false,
+            zeroline: false,
+            range: [0, 8]
         },
         yaxis2: {
             title: 'Successes / Failures',
@@ -158,5 +197,5 @@ categorySelect.addEventListener('change', (e) => {
     loadStats(e.target.value);
 });
 
-// Initial load
-loadStats(categorySelect.value);
+// Initial load - fetch categories first
+loadCategories();

@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Fastenshtein;
 using FreezeTune.Models;
 using FreezeTune.Repositories;
@@ -9,17 +10,28 @@ public class UserLogic:IUserLogic
     private readonly uint _maxDistance;
     private readonly IDatabaseRepository _databaseRepository;
     private readonly IImageRepository _imageRepositor;
+    private readonly IVideoRepository _videoRepository;
 
-    public UserLogic(IDatabaseRepository databaseRepository, IImageRepository imageRepositor, Config config)
+    public UserLogic(IDatabaseRepository databaseRepository, IImageRepository imageRepositor, IVideoRepository videoRepository, Config config)
     {
         _databaseRepository = databaseRepository;
         _imageRepositor = imageRepositor;
+        _videoRepository = videoRepository;
         _maxDistance = config.MaxDistance;
     }
     
     public string GetImage(string category, DateOnly date, int currentNumber)
     {
         return _imageRepositor.GetBase64Image(category, date, currentNumber);
+    }
+
+    private int GetLevenshtein(string original, string guess)
+    {
+        var cleanedOriginal = Regex.Replace(original.ToLower(), @"[^a-zA-Z0-9\s]", "");
+        var cleanedGuess = Regex.Replace(guess.ToLower(), @"[^a-zA-Z0-9\s]", "");
+
+        var lev = new Levenshtein(cleanedOriginal);
+        return lev.DistanceFrom(cleanedGuess);
     }
     
     public CalculationResult TakeAGuess(string category, Guess guess)
@@ -28,11 +40,8 @@ public class UserLogic:IUserLogic
             new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day));
         if (todaysRiddle == null) throw new Exception("Data is missing");
 
-        var levInterpret = new Levenshtein(todaysRiddle.Interpret.ToLower());
-        var levTitle = new Levenshtein(todaysRiddle.Title.ToLower());
-
-        var levInterpretValue = levInterpret.DistanceFrom(guess.Interpret.ToLower());
-        var levTitleValue = levTitle.DistanceFrom(guess.Title.ToLower());
+        var levInterpretValue = GetLevenshtein(todaysRiddle.Interpret, guess.Interpret);
+        var levTitleValue = GetLevenshtein(todaysRiddle.Title, guess.Title);
 
         var result = new CalculationResult
         {
@@ -50,6 +59,8 @@ public class UserLogic:IUserLogic
         {
             _databaseRepository.AddStats(category, guess.GuessCount, false);
         }
+
+        result.Interpret = todaysRiddle.Interpret;
         return result;
     }
 }

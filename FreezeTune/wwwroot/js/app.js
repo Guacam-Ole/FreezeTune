@@ -1,7 +1,7 @@
 // Game state
 let currentGuessCount = 0;
 let maxGuesses = 8;
-let currentCategory = '80s';
+let currentCategory = new URLSearchParams(window.location.search).get('category') || '80s';
 
 // LocalStorage key for game state
 const STORAGE_KEY = 'freezetune_game_state';
@@ -72,7 +72,17 @@ const successInterpret = document.getElementById('success-interpret');
 const successTitle = document.getElementById('success-title');
 const finalGuessCount = document.getElementById('final-guess-count');
 const youtubeVideo = document.getElementById('youtube-video');
+const localVideo = document.getElementById('local-video');
+const localVideoSource = document.getElementById('local-video-source');
 const shareResultsBtn = document.getElementById('share-results-btn');
+const imageSummary = document.getElementById('image-summary');
+const thumbnailGrid = document.getElementById('thumbnail-grid');
+
+// Modal elements
+const imageModal = document.getElementById('image-modal');
+const modalImage = document.getElementById('modal-image');
+const modalClose = document.getElementById('modal-close');
+const modalOverlay = document.querySelector('.modal-overlay');
 
 // Store the last game result for sharing
 let lastGameResult = {
@@ -250,7 +260,9 @@ function handleGuessResult(result) {
 
     // Check if the user got it right (or ran out of guesses)
     if (result.match) {
-        showSuccess(result.match, result.guesses);
+        const wasCorrectGuess = result.interpretCorrect && result.titleCorrect;
+        const allPictures = result.allPictureContents || result.AllPictureContents;
+        showSuccess(result.match, result.guesses, wasCorrectGuess, allPictures);
         return;
     }
 
@@ -270,10 +282,15 @@ function handleGuessResult(result) {
     submitBtn.disabled = false;
     submitBtn.textContent = 'Submit Guess';
 
-    // Clear incorrect inputs but keep correct ones
-    if (!result.interpretCorrect) {
+    // Display interpret hint if provided
+    const interpretHint = result.interpret;
+    if (interpretHint) {
+        interpretInput.value = interpretHint;
+    } else if (!result.interpretCorrect) {
         interpretInput.value = '';
     }
+
+    // Clear title if incorrect
     if (!result.titleCorrect) {
         titleInput.value = '';
     }
@@ -362,14 +379,17 @@ function updateProgress(imageNumber) {
 }
 
 // Show success screen
-function showSuccess(match, guesses) {
+function showSuccess(match, guesses, wasCorrectGuess = null, allPictures = null) {
     gameScreen.classList.add('hidden');
     successScreen.classList.remove('hidden');
+
+    // Determine success: use wasCorrectGuess if provided, otherwise use saved lastGameResult
+    const success = wasCorrectGuess !== null ? wasCorrectGuess : lastGameResult.success;
 
     // Store result for sharing
     lastGameResult = {
         guesses: guesses,
-        success: guesses < 8
+        success: success
     };
 
     // Save completed game state
@@ -380,7 +400,7 @@ function showSuccess(match, guesses) {
     const successMessage = document.querySelector('.success-message');
     const guessCountElement = document.querySelector('.guess-count');
 
-    if (guesses >= 8) {
+    if (!success) {
         successHeader.textContent = 'Game Over!';
         successMessage.textContent = 'You ran out of guesses. Here\'s the answer:';
         guessCountElement.textContent = 'Better luck next time!';
@@ -393,9 +413,34 @@ function showSuccess(match, guesses) {
     successInterpret.textContent = match.interpret;
     successTitle.textContent = match.title;
 
-    // Convert YouTube URL to embed URL
-    const embedUrl = convertToEmbedUrl(match.url);
-    youtubeVideo.src = embedUrl;
+    // Check if local video file exists (handle both camelCase and PascalCase)
+    const videoFile = match.videoFile || match.VideoFile;
+    if (videoFile) {
+        // Show local video, hide YouTube iframe
+        youtubeVideo.classList.add('hidden');
+        localVideo.classList.remove('hidden');
+
+        // Build stream URL with guess parameters for validation
+        const streamUrl = `/Image/Stream?category=${encodeURIComponent(currentCategory)}&Interpret=${encodeURIComponent(match.interpret)}&Title=${encodeURIComponent(match.title)}&GuessCount=${guesses}`;
+        localVideoSource.src = streamUrl;
+        localVideo.load();
+    } else {
+        // Show YouTube iframe, hide local video
+        localVideo.classList.add('hidden');
+        youtubeVideo.classList.remove('hidden');
+
+        // Convert YouTube URL to embed URL
+        const embedUrl = convertToEmbedUrl(match.url);
+        youtubeVideo.src = embedUrl;
+    }
+
+    // Display image thumbnails if available
+    if (allPictures && allPictures.length > 0) {
+        displayThumbnails(allPictures);
+        imageSummary.classList.remove('hidden');
+    } else {
+        imageSummary.classList.add('hidden');
+    }
 }
 
 // Convert YouTube URL to embed URL
@@ -417,7 +462,9 @@ function convertToEmbedUrl(url) {
 // Hide success screen
 function hideSuccessScreen() {
     successScreen.classList.add('hidden');
-    youtubeVideo.src = ''; // Stop video playback
+    youtubeVideo.src = ''; // Stop YouTube playback
+    localVideo.pause(); // Stop local video playback
+    localVideoSource.src = '';
 }
 
 // Show game screen
@@ -490,9 +537,9 @@ function generateShareText() {
     let headerText;
     if (success) {
         //const ordinal = getOrdinalSuffix(guesses);
-        headerText = `${medal} FreezeTune 80s ${guesses}/8 | ${date}`;
+        headerText = `${medal} FreezeTune ${currentCategory} ${guesses}/8 | ${date}`;
     } else {
-        headerText = `${medal} FreezeTune 80s not solved | ${date}`;
+        headerText = `${medal} FreezeTune ${currentCategory} not solved | ${date}`;
     }
 
     return `${headerText}\n${emojiChain}\n\nfreezetune.com\n#FreezeTune`;
@@ -527,3 +574,43 @@ async function shareResults() {
         showError('Failed to copy to clipboard');
     }
 }
+
+// Display thumbnails in the summary grid
+function displayThumbnails(images) {
+    thumbnailGrid.innerHTML = '';
+
+    images.forEach((base64Image, index) => {
+        const img = document.createElement('img');
+        img.src = `data:image/jpeg;base64,${base64Image}`;
+        img.alt = `Freeze frame ${index + 1}`;
+        img.addEventListener('click', () => openModal(base64Image));
+        thumbnailGrid.appendChild(img);
+    });
+}
+
+// Open modal with full-size image
+function openModal(base64Image) {
+    modalImage.src = `data:image/jpeg;base64,${base64Image}`;
+    imageModal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden'; // Prevent scrolling
+}
+
+// Close modal
+function closeModal() {
+    imageModal.classList.add('hidden');
+    modalImage.src = '';
+    document.body.style.overflow = ''; // Restore scrolling
+}
+
+// Modal event listeners
+if (modalClose) {
+    modalClose.addEventListener('click', closeModal);
+}
+if (modalOverlay) {
+    modalOverlay.addEventListener('click', closeModal);
+}
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !imageModal.classList.contains('hidden')) {
+        closeModal();
+    }
+});

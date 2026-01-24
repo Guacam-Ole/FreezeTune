@@ -1,3 +1,4 @@
+const categorySelect = document.getElementById('category');
 const dateInput = document.getElementById('date');
 const apikeyInput = document.getElementById('apikey');
 const urlInput = document.getElementById('url');
@@ -13,13 +14,43 @@ const errorMessage = document.getElementById('error-message');
 let currentVideo = null;
 let selectedImages = [];
 
-window.addEventListener('DOMContentLoaded', loadDate);
+window.addEventListener('DOMContentLoaded', loadCategories);
 downloadBtn.addEventListener('click', handleDownload);
 addVideoBtn.addEventListener('click', handleAddVideo);
+categorySelect.addEventListener('change', loadDate);
+
+async function loadCategories() {
+    try {
+        const response = await fetch('/Image/Categories');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const categories = await response.json();
+
+        categorySelect.innerHTML = '';
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category;
+            option.textContent = category;
+            categorySelect.appendChild(option);
+        });
+
+        if (categories.length > 0) {
+            loadDate();
+        }
+    } catch (error) {
+        showError('Failed to load categories: ' + error.message);
+        console.error('Error loading categories:', error);
+    }
+}
+
+function getSelectedCategory() {
+    return categorySelect.value;
+}
 
 async function loadDate() {
     try {
-        const response = await fetch('/Maintenance/Date?category=80s');
+        const response = await fetch(`/Maintenance/Date?category=${encodeURIComponent(getSelectedCategory())}`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -46,7 +77,7 @@ async function handleDownload() {
     try {
         const video = { ...currentVideo, url: url, date: parseDate(dateInput.value.trim()) };
 
-        const response = await fetch(`/Maintenance/Download?apiKey=${encodeURIComponent(apiKey)}&category=80s`, {
+        const response = await fetch(`/Maintenance/Download?apiKey=${encodeURIComponent(apiKey)}&category=${encodeURIComponent(getSelectedCategory())}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -59,6 +90,14 @@ async function handleDownload() {
         }
 
         const result = await response.json();
+
+        // Check for error in response (handle both camelCase and PascalCase)
+        const errorMsg = result.error || result.Error;
+        if (errorMsg) {
+            showError(errorMsg);
+            return;
+        }
+
         interpretInput.value = result.interpret || '';
         titleInput.value = result.title || '';
 
@@ -75,7 +114,7 @@ async function handleDownload() {
 async function loadTempImages(apiKey) {
     try {
         const video = { ...currentVideo, date: parseDate(dateInput.value.trim()) };
-        const response = await fetch(`/Maintenance/Temp?apiKey=${encodeURIComponent(apiKey)}&category=80s`, {
+        const response = await fetch(`/Maintenance/Temp?apiKey=${encodeURIComponent(apiKey)}&category=${encodeURIComponent(getSelectedCategory())}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -139,7 +178,7 @@ async function handleAddVideo() {
             imageIds: selectedImages
         };
 
-        const response = await fetch(`/Maintenance/Store?apiKey=${encodeURIComponent(apiKey)}&category=80s`, {
+        const response = await fetch(`/Maintenance/Store?apiKey=${encodeURIComponent(apiKey)}&category=${encodeURIComponent(getSelectedCategory())}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

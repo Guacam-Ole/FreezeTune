@@ -7,9 +7,9 @@
     <meta name="description" content="View statistics for FreezeTune 80s Music Quiz">
     <meta name="author" content="Ole Albers">
     <meta name="theme-color" content="#6366f1">
-    <link rel="stylesheet" href="styles.css">
-    <link rel="icon" type="image/png" href="http://freezetune.com/favicon.png" />
-    <script src="plotly.js"></script>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon" type="image/png" href="images/favicon.png" />
+    <script src="js/plotly.js"></script>
     <style>
         .stats-container {
             width: 100%;
@@ -113,6 +113,7 @@
         .legend-color.blue { background: #6366f1; }
         .legend-color.green { background: #10b981; }
         .legend-color.red { background: #ef4444; }
+        .legend-color.yellow { background: #f59e0b; }
 
         @media (max-width: 600px) {
             .stats-screen {
@@ -144,7 +145,7 @@
             <div class="category-select">
                 <label for="category">Category:</label>
                 <select id="category" name="category">
-                    <option value="80s">80s</option>
+                    <option value="">Loading...</option>
                 </select>
             </div>
 
@@ -169,6 +170,10 @@
                     <span class="legend-color red"></span>
                     <span>Failures</span>
                 </div>
+                <div class="legend-item">
+                    <span class="legend-color yellow"></span>
+                    <span>Total</span>
+                </div>
             </div>
 
             <a href="/" class="back-link">← Back to Game</a>
@@ -177,6 +182,6 @@
         <div id="error-message" class="error-message hidden"></div>
     </div>
 
-    <script src="stats.js"></script>
+    <script src="js/stats.js"></script>
 </body>
 </html>
