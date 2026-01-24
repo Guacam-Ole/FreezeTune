@@ -5,6 +5,7 @@ namespace FreezeTune.Repositories;
 public interface IDatabaseRepository
 {
     Daily GetForDay(string category, DateOnly date);
+    DateOnly? LastTimeWeHad(string category, string interpret, string title);
     void Upsert(Daily daily);
     DateOnly? AvailableUntil(string category);
     void AddStats(string category, int numberOfGuesses, bool success);

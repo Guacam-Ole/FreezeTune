@@ -10,11 +10,19 @@ public class ImagesController : Controller
 {
     private readonly IUserLogic _userLogic;
     private readonly IDatabaseRepository _databaseRepository;
+    private readonly Config _config;
 
-    public ImagesController(IUserLogic userLogic, IDatabaseRepository databaseRepository)
+    public ImagesController(IUserLogic userLogic, IDatabaseRepository databaseRepository, Config config)
     {
         _userLogic = userLogic;
         _databaseRepository = databaseRepository;
+        _config = config;
+    }
+
+    [HttpGet("Categories")]
+    public List<string> GetCategories()
+    {
+        return _config.Categories;
     }
 
     [HttpPost]

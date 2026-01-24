@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FreezeTune - Maintenance</title>
     <meta name="robots" content="noindex, nofollow">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="css/styles.css">
     <style>
         .container {
             max-width: 95%;
@@ -62,6 +62,22 @@
             border-radius: 8px;
             color: var(--text-secondary);
         }
+        .input-group select {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 1rem;
+            background: var(--background);
+            border: 2px solid var(--surface-light);
+            border-radius: 8px;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .input-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background: var(--surface);
+        }
     </style>
 </head>
 <body>
@@ -71,6 +87,13 @@
         </header>
 
         <div class="maintenance-screen">
+            <div class="input-group">
+                <label for="category">Category</label>
+                <select id="category" name="category">
+                    <option value="">Loading categories...</option>
+                </select>
+            </div>
+
             <div class="input-group">
                 <label for="date">Date</label>
                 <input type="text" id="date" name="date" placeholder="dd.MM.yyyy">
@@ -110,6 +133,6 @@
         <div id="error-message" class="error-message hidden"></div>
     </div>
 
-    <script src="org.js"></script>
+    <script src="js/org.js"></script>
 </body>
 </html>

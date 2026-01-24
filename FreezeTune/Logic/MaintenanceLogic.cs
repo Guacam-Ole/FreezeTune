@@ -20,12 +20,11 @@ public class MaintenanceLogic:IMaintenanceLogic
     }
     
     
-    public Models.Video Init(string category)
+    public Video Init(string category)
     {
-        var lastDay = _dbRepository.AvailableUntil(category) ??
-                      new DateOnly(DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day);
+        var lastDay = _dbRepository.AvailableUntil(category) ?? new DateOnly(DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day).AddDays(-1);
 
-        return new Models.Video
+        return new Video
         {
             Date = lastDay.AddDays(1)
         };
@@ -38,7 +37,8 @@ public class MaintenanceLogic:IMaintenanceLogic
 
     public Dictionary<int, string> GetTmpImages(string category, Video video)
     {
-        return _imageRepositor.GetTempImages(category, video.Date, NumberOfFrames);
+        var lastTimeWeHad = _dbRepository.LastTimeWeHad(category, video.Interpret, video.Title);
+        return lastTimeWeHad.HasValue ? throw new Exception("We already had this") : _imageRepositor.GetTempImages(category, video.Date, NumberOfFrames);
     }
 
 

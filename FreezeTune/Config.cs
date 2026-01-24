@@ -7,7 +7,6 @@ public class Config
     public uint Height { get; set; } = 480;
     public uint MaxDistance { get; set; } = 3;
     
-    public List<string> Categories { get; set; }= ["80s"];
+    public List<string> Categories { get; set; }= ["80s","90s"];
     public Dictionary<string, string>? CategoryKeys { get; set; } = null;
-    public string YoutubeCookie { get; set; }="CAESEwgDEgk4MTA2NTYwMTIaAmVuIAEaBgiAmOfGBg";
 }

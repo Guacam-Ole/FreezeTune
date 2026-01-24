@@ -24,6 +24,16 @@ public class DatabaseRepository : IDatabaseRepository
         return dailies.FindOne(q => q.Date == date);
     }
 
+    public DateOnly? LastTimeWeHad(string category, string interpret, string title)
+    {
+        using var db = new LiteDatabase(GetDbName(category));
+        var dailies = db.GetCollection<Daily>();
+        var match = dailies.FindOne(q =>
+            q.Category == category && q.Interpret.Equals(interpret, StringComparison.CurrentCultureIgnoreCase) &&
+            q.Title.Equals(title, StringComparison.CurrentCultureIgnoreCase));
+        return match?.Date;
+    }
+
     public void Upsert(Daily daily)
     {
         using var db = new LiteDatabase(GetDbName(daily.Category));
