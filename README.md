@@ -34,4 +34,4 @@ If you want to use Tidal (instead of Youtube) as a video source you have to auth
 docker exec -it freezetune-freezetune-1 tidal-dl-ng login
 ```
 
-(The docker name might vary a bit) and follow the instructions
+(The docker name might vary a bit) and follow the instructions. You need a payed subscription!
