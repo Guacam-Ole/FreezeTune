@@ -3,8 +3,10 @@ let currentGuessCount = 0;
 let maxGuesses = 8;
 let currentCategory = new URLSearchParams(window.location.search).get('category') || '80s';
 
-// LocalStorage key for game state
-const STORAGE_KEY = 'freezetune_game_state';
+// LocalStorage key for game state (category-specific)
+function getStorageKey() {
+    return `freezetune_game_state_${currentCategory}`;
+}
 
 // Get today's date as string for comparison
 function getTodayString() {
@@ -22,13 +24,13 @@ function saveGameState(completed = false, matchData = null) {
         match: matchData,
         lastGameResult: lastGameResult
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(getStorageKey(), JSON.stringify(state));
 }
 
 // Load game state from localStorage
 function loadGameState() {
     try {
-        const saved = localStorage.getItem(STORAGE_KEY);
+        const saved = localStorage.getItem(getStorageKey());
         if (!saved) return null;
 
         const state = JSON.parse(saved);
@@ -37,7 +39,7 @@ function loadGameState() {
             return state;
         }
         // Clear old state
-        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(getStorageKey());
         return null;
     } catch (e) {
         console.error('Error loading game state:', e);
@@ -47,7 +49,7 @@ function loadGameState() {
 
 // Clear game state
 function clearGameState() {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(getStorageKey());
 }
 
 // DOM elements
