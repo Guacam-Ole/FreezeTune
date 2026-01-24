@@ -9,4 +9,5 @@ public class Result
     public Daily? Match { get; set; }
     public string NextPictureContents { get; set; } = string.Empty;
     public string? Interpret { get; set; }
+    public List<string>? AllPictureContents { get; set; }
 }

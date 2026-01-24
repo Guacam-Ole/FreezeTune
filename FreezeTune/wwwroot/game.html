@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FreezeTune - Guess the Song!</title>
+    <meta name="description"
+          content="Can you guess the 80s song from a single freeze frame? Test your music knowledge with FreezeTune's daily challenge!">
+    <meta name="keywords" content="80s music quiz, music game, song quiz, freeze frame game, daily music challenge">
+    <meta name="author" content="Ole Albers">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://freezetune.com/">
+    <meta property="og:title" content="FreezeTune - Daily 80s Music Quiz">
+    <meta property="og:description"
+          content="Can you guess the 80s song from a single freeze frame? Test your music knowledge with FreezeTune's daily challenge!">
+    <meta property="og:image" content="https://freezetune.com/og-image.jpg">
+    <meta property="og:site_name" content="FreezeTune">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://freezetune.com/">
+    <meta name="twitter:title" content="FreezeTune - Daily 80s Music Quiz">
+    <meta name="twitter:description"
+          content="Can you guess the 80s song from a single freeze frame? Test your music knowledge with FreezeTune's daily challenge!">
+    <meta name="twitter:image" content="https://freezetune.com/og-image.jpg">
+
+
+    <!-- SEO-Gedöns -->
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "Game",
+            "name": "FreezeTune 80s Music Quiz",
+            "description": "Can you guess the 80s song from a single freeze frame? Test your music knowledge with FreezeTune's daily challenge!",
+            "url": "https://freezetune.com/",
+            "image": "https://freezetune.com/og-image.jpg",
+            "genre": "Music Quiz",
+            "gamePlatform": "Web browser",
+            "numberOfPlayers": "1",
+            "audience": {
+                "@type": "PeopleAudience",
+                "suggestedMinAge": "13"
+            }
+        }
+    </script>
+
+
+    <meta name="theme-color" content="#6366f1">
+    <link rel="canonical" href="https://freezetune.com/">
+
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon" type="image/png" href="images/favicon.png"/>
+
+
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>FreezeTune 80s Music Quiz</h1>
+        <p class="subtitle">Guess the song from the freeze frame!</p>
+    </header>
+
+    <div id="game-screen" class="game-screen">
+        <div class="image-container">
+            <img id="game-image" src="" alt="Music video freeze frame for 80s song quiz" class="game-image">
+            <div class="image-loader" id="image-loader">
+                <div class="spinner"></div>
+                <p>Loading...</p>
+            </div>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+            <div class="progress-text" id="progress-text">Image 1 of 8</div>
+        </div>
+
+        <form id="guess-form" class="guess-form">
+            <div class="input-group">
+                <label for="interpret">Artist</label>
+                <input
+                        type="text"
+                        id="interpret"
+                        name="interpret"
+                        placeholder="Enter artist name (or leave empty)"
+                        autocomplete="off"
+                >
+                <span class="feedback" id="interpret-feedback"></span>
+            </div>
+
+            <div class="input-group">
+                <label for="title">Song Title</label>
+                <input
+                        type="text"
+                        id="title"
+                        name="title"
+                        placeholder="Enter song title (or leave empty)"
+                        autocomplete="off"
+                >
+                <span class="feedback" id="title-feedback"></span>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submit-btn">
+                Submit Guess
+            </button>
+        </form>
+    </div>
+
+    <div id="success-screen" class="success-screen hidden">
+        <div class="success-content">
+            <div class="success-header">
+                <h2>Congratulations!</h2>
+                <p class="success-message">You guessed it correctly!</p>
+            </div>
+
+            <div class="song-info">
+                <h3 id="success-interpret"></h3>
+                <p id="success-title"></p>
+                <p class="guess-count">You got it in <span id="final-guess-count"></span> guess(es)!</p>
+            </div>
+
+
+
+            <div class="video-container">
+                <video id="local-video" controls width="100%" height="400" class="hidden">
+                    <source id="local-video-source" src="" type="video/mp4"/>
+                </video>
+                <iframe
+                        id="youtube-video"
+                        width="100%"
+                        height="400"
+                        src=""
+                        frameborder="0"
+                        allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen>
+                </iframe>
+            </div>
+
+            <div id="image-summary" class="image-summary hidden">
+                <h4>Your Journey</h4>
+                <div id="thumbnail-grid" class="thumbnail-grid"></div>
+            </div>
+
+            <button id="share-results-btn" class="share-results-btn">Share Results</button>
+            <p class="share-hint">Click to copy to clipboard</p>
+
+            <footer class="site-footer">
+                <a href="https://chaos.social/@guacamole" target="_blank" rel="noopener"
+                   title="@guacamole@chaos.social">written by @guacamole@chaos.social</a>
+                <span class="footer-sep">|</span>
+                <a href="https://github.com/Guacam-Ole/FreezeTune/issues" target="_blank" rel="noopener"
+                   title="Bugs, Suggestions, Feedback">Feedback</a>
+            </footer>
+        </div>
+    </div>
+
+    <div id="error-message" class="error-message hidden"></div>
+
+    <!-- Image Modal -->
+    <div id="image-modal" class="image-modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <img id="modal-image" src="" alt="Enlarged freeze frame">
+            <button id="modal-close" class="modal-close">&times;</button>
+        </div>
+    </div>
+
+    <!--        <footer class="site-footer">-->
+    <!--            <a href="https://chaos.social/@guacamole" target="_blank" rel="noopener" title="@guacamole@chaos.social">Written by @guacamole@chaos.social</a>-->
+    <!--            <span class="footer-sep">|</span>-->
+    <!--            <a href="https://github.com/Guacam-Ole/FreezeTune/issues" target="_blank" rel="noopener" title="Bugs, Suggestions, Feedback">Any suggestions</a>-->
+    <!--        </footer>-->
+</div>
+
+<script src="js/app.js"></script>
+<script>
+    // Update page title and heading based on category query parameter
+    (function() {
+        const category = new URLSearchParams(window.location.search).get('category') || '80s';
+        document.title = `FreezeTune - ${category} Music Quiz`;
+        const h1 = document.querySelector('header h1');
+        if (h1) h1.textContent = `FreezeTune ${category} Music Quiz`;
+    })();
+</script>
+</body>
+</html>

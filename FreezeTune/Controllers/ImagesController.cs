@@ -44,6 +44,16 @@ public class ImagesController : Controller
             result.Interpret = guessResult.Interpret;
         }
 
+        if (result.Match != null || guess.GuessCount >= 8)
+        {
+            // All Pictures again for the final page
+            result.AllPictureContents = [];
+            for (var i = 0; i < 8; i++)
+            {
+                result.AllPictureContents.Add(_userLogic.GetImage(category, date, i));
+            }
+        }
+
         if (result.Match != null) return result;
 
         if (guess.GuessCount >= 8)
@@ -86,7 +96,7 @@ public class ImagesController : Controller
 
             fileStream.Seek(start, SeekOrigin.Begin);
 
-            Response.StatusCode = 206; 
+            Response.StatusCode = 206;
             Response.Headers.Append("Content-Range", $"bytes {start}-{end}/{fileInfo.Length}");
             Response.Headers.Append("Accept-Ranges", "bytes");
             Response.ContentLength = length;
