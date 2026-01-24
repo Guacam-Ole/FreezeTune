@@ -113,6 +113,7 @@
         .legend-color.blue { background: #6366f1; }
         .legend-color.green { background: #10b981; }
         .legend-color.red { background: #ef4444; }
+        .legend-color.yellow { background: #f59e0b; }
 
         @media (max-width: 600px) {
             .stats-screen {
@@ -144,7 +145,7 @@
             <div class="category-select">
                 <label for="category">Category:</label>
                 <select id="category" name="category">
-                    <option value="80s">80s</option>
+                    <option value="">Loading...</option>
                 </select>
             </div>
 
@@ -168,6 +169,10 @@
                 <div class="legend-item">
                     <span class="legend-color red"></span>
                     <span>Failures</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color yellow"></span>
+                    <span>Total</span>
                 </div>
             </div>
 
