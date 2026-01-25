@@ -392,6 +392,23 @@ header h1 {
     transform: scale(0.98);
 }
 
+.back-to-categories {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 12px 24px;
+    background: var(--surface-light);
+    color: var(--text-primary);
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.back-to-categories:hover {
+    background: var(--primary-color);
+    transform: translateY(-2px);
+}
+
 .share-hint {
     margin-top: 10px;
     font-size: 0.9rem;

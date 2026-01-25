@@ -71,8 +71,7 @@ public class ImagesController : Controller
     public IActionResult? GetVideoStream(string category, Guess guess)
     {
         var date = new DateOnly(DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day);
-        var guessResult = _userLogic.TakeAGuess(category, guess);
-        if (!guessResult.InterpretMatch || !guessResult.TitleMatch) return null; // nice try cheating
+        if (!_userLogic.ValuesAreCorrect(category, guess.Interpret, guess.Title)) return null; // nice try cheating
         var daily = _databaseRepository.GetForDay(category, date);
         if (!System.IO.File.Exists(daily.VideoFile))
         {

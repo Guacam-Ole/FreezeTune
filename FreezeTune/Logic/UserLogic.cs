@@ -5,21 +5,22 @@ using FreezeTune.Repositories;
 
 namespace FreezeTune.Logic;
 
-public class UserLogic:IUserLogic
+public class UserLogic : IUserLogic
 {
     private readonly uint _maxDistance;
     private readonly IDatabaseRepository _databaseRepository;
     private readonly IImageRepository _imageRepositor;
-    private readonly IVideoRepository _videoRepository;
+    
 
-    public UserLogic(IDatabaseRepository databaseRepository, IImageRepository imageRepositor, IVideoRepository videoRepository, Config config)
+    public UserLogic(IDatabaseRepository databaseRepository, IImageRepository imageRepositor,
+        IVideoRepository videoRepository, Config config)
     {
         _databaseRepository = databaseRepository;
         _imageRepositor = imageRepositor;
-        _videoRepository = videoRepository;
+      
         _maxDistance = config.MaxDistance;
     }
-    
+
     public string GetImage(string category, DateOnly date, int currentNumber)
     {
         return _imageRepositor.GetBase64Image(category, date, currentNumber);
@@ -32,6 +33,17 @@ public class UserLogic:IUserLogic
 
         var lev = new Levenshtein(cleanedOriginal);
         return lev.DistanceFrom(cleanedGuess);
+    }
+
+    public bool ValuesAreCorrect(string category, string interpret, string title)
+    {
+        var todaysRiddle = _databaseRepository.GetForDay(category,
+            new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day));
+        if (todaysRiddle == null) throw new Exception("Data is missing");
+
+        var levInterpretValue = GetLevenshtein(todaysRiddle.Interpret, interpret);
+        var levTitleValue = GetLevenshtein(todaysRiddle.Title, title);
+        return levInterpretValue <= _maxDistance && levTitleValue <= _maxDistance;
     }
     
     public CalculationResult TakeAGuess(string category, Guess guess)
@@ -55,7 +67,7 @@ public class UserLogic:IUserLogic
             result.Match = todaysRiddle;
             _databaseRepository.AddStats(category, guess.GuessCount, true);
         }
-        else if (guess.GuessCount==8)
+        else if (guess.GuessCount == 8)
         {
             _databaseRepository.AddStats(category, guess.GuessCount, false);
         }
