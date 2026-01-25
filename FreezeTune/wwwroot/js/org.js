@@ -193,6 +193,8 @@ async function handleAddVideo() {
         const result = await response.json();
         if (result) {
             showError('Video added successfully!');
+            // Reload the date to get the next available date
+            await loadDate();
         }
     } catch (error) {
         showError('Failed to add video: ' + error.message);

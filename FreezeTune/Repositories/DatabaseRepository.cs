@@ -64,7 +64,6 @@ public class DatabaseRepository : IDatabaseRepository
         if (success)
         {
             todaysStats.GuessToSuccess.TryAdd(numberOfGuesses, 0);
-
             todaysStats.GuessToSuccess[numberOfGuesses]++;
             todaysStats.Successes++;
         }

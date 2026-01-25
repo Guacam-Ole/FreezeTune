@@ -3,6 +3,8 @@ using CliWrap.Buffered;
 using FreezeTune.Models;
 using Xabe.FFmpeg;
 using YoutubeExplode;
+using YoutubeExplode.Converter;
+using YoutubeExplode.Videos.Streams;
 
 namespace FreezeTune.Repositories;
 
@@ -32,7 +34,7 @@ public class VideoRepository : IVideoRepository
         var sanitized = string.Join("_", value.Split(invalidChars,
             StringSplitOptions.RemoveEmptyEntries));
 
-        return sanitized.TrimEnd('.', ' '); 
+        return sanitized.TrimEnd('.', ' ');
     }
 
     private string GetVideoPathFor(string category, Video video)
@@ -65,14 +67,6 @@ public class VideoRepository : IVideoRepository
         File.Move(sourceFile, targetFile);
         return targetFile;
     }
-
-    public FileStream LoadVideoFromDisk(string videoPath)
-    {
-        if (!File.Exists(videoPath)) throw new Exception("File not found");
-        var fileStream = new FileStream(videoPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-        return fileStream;
-    }
-
 
     private async Task<Video> ExtractFrames(string category, string url, DateOnly date, string author, string title,
         int numberOfFrames)
@@ -146,24 +140,63 @@ public class VideoRepository : IVideoRepository
     }
 
 
+    /*
+     // Get stream manifest
+       var videoUrl = "https://youtube.com/watch?v=u_yIGGhubZs";
+       var streamManifest = await youtube.Videos.Streams.GetManifestAsync(videoUrl);
+
+       // Select best audio stream (highest bitrate)
+       var audioStreamInfo = streamManifest
+           .GetAudioStreams()
+           .Where(s => s.Container == Container.Mp4)
+           .GetWithHighestBitrate();
+
+       // Select best video stream (1080p60 in this example)
+       var videoStreamInfo = streamManifest
+           .GetVideoStreams()
+           .Where(s => s.Container == Container.Mp4)
+           .First(s => s.VideoQuality.Label == "1080p60");
+
+       // Download and mux streams into a single file
+       await youtube.Videos.DownloadAsync(
+           [audioStreamInfo, videoStreamInfo],
+           new ConversionRequestBuilder("video.mp4").Build()
+       );
+
+     */
+
     private async Task<(string, string)> DownloadVideoFromYoutube(string category, string youtubeUrl, DateOnly date)
     {
         try
         {
             using var youtube = new YoutubeClient();
             var manifest = await youtube.Videos.Streams.GetManifestAsync(youtubeUrl);
-            var streamInfo = manifest.GetVideoOnlyStreams().OrderBy(q => q.VideoResolution.Width)
-                .ThenBy(q => q.VideoResolution.Height)
-                .FirstOrDefault(q =>
-                    q.VideoResolution.Width >= _config.Width && q.VideoResolution.Height >= _config.Height) ?? manifest
-                .GetVideoOnlyStreams().OrderByDescending(q => q.VideoResolution.Width)
-                .ThenByDescending(q => q.VideoResolution.Height)
-                .First();
+
+            var audioStreamInfo = manifest
+                .GetAudioStreams()
+                .Where(s => s.Container == Container.Mp4)
+                .GetWithHighestBitrate();
+
+            var videoStreams = manifest.GetVideoStreams().Where(s => s.Container == Container.Mp4);
+            var videoStreamInfo =
+                videoStreams
+                    .OrderBy(q => q.VideoResolution.Width)
+                    .ThenBy(q => q.VideoResolution.Height)
+                    .FirstOrDefault(q =>
+                        q.VideoResolution.Width >= _config.Width &&
+                        q.VideoResolution.Height >= _config.Height)
+                ?? videoStreams
+                    .OrderByDescending(q => q.VideoResolution.Width)
+                    .ThenByDescending(q => q.VideoResolution.Height)
+                    .First();
 
             var videoContents = await youtube.Videos.GetAsync(youtubeUrl);
-            await youtube.Videos.Streams.DownloadAsync(streamInfo,
-                GetTempVideoPathFor(category, date, videoContents.Author.ChannelTitle, videoContents.Title));
 
+            await youtube.Videos.DownloadAsync(
+                [audioStreamInfo, videoStreamInfo],
+                new ConversionRequestBuilder(GetTempVideoPathFor(category, date, videoContents.Author.ChannelTitle,
+                    videoContents.Title)).Build()
+            );
             return (videoContents.Author.ChannelTitle, videoContents.Title);
         }
         catch (Exception e)

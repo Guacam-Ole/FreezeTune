@@ -28,7 +28,7 @@ public class MaintenanceController : ControllerBase
     [HttpGet("Date")]
     public Video GetDate(string category)
     {
-        return _maintenanceLogic.Init(category);
+         return _maintenanceLogic.Init(category);
     }
 
     [HttpPost("Download")]
