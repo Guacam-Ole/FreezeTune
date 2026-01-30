@@ -2,6 +2,7 @@
 let currentGuessCount = 0;
 let maxGuesses = 8;
 let currentCategory = new URLSearchParams(window.location.search).get('category') || '80s';
+let availableCategories = [];
 
 // LocalStorage key for game state (category-specific)
 function getStorageKey() {
@@ -93,12 +94,76 @@ let lastGameResult = {
 };
 
 // Initialize game on page load
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
     if (categorySelect) {
         currentCategory = categorySelect.value;
     }
+    await loadCategories();
     initializeGame();
 });
+
+// Load available categories from server
+async function loadCategories() {
+    try {
+        const response = await fetch('/Image/Categories');
+        if (response.ok) {
+            availableCategories = await response.json();
+        }
+    } catch (e) {
+        console.error('Error loading categories:', e);
+    }
+}
+
+// Update quiz navigation buttons based on current category position
+function updateQuizNavigation() {
+    const quizNavigation = document.getElementById('quiz-navigation');
+    const prevBtn = document.getElementById('prev-quiz-btn');
+    const nextBtn = document.getElementById('next-quiz-btn');
+    const prevLabel = document.getElementById('prev-quiz-label');
+    const nextLabel = document.getElementById('next-quiz-label');
+
+    if (!quizNavigation || availableCategories.length <= 1) {
+        if (quizNavigation) quizNavigation.classList.add('hidden');
+        return;
+    }
+
+    const currentIndex = availableCategories.indexOf(currentCategory);
+    if (currentIndex === -1) {
+        quizNavigation.classList.add('hidden');
+        return;
+    }
+
+    const hasPrev = currentIndex > 0;
+    const hasNext = currentIndex < availableCategories.length - 1;
+
+    // Show navigation container if there's at least one direction to go
+    if (hasPrev || hasNext) {
+        quizNavigation.classList.remove('hidden');
+    } else {
+        quizNavigation.classList.add('hidden');
+        return;
+    }
+
+    // Previous button
+    if (hasPrev) {
+        const prevCategory = availableCategories[currentIndex - 1];
+        prevBtn.href = `game.html?category=${encodeURIComponent(prevCategory)}`;
+        prevLabel.textContent = prevCategory;
+        prevBtn.classList.remove('hidden');
+    } else {
+        prevBtn.classList.add('hidden');
+    }
+
+    // Next button
+    if (hasNext) {
+        const nextCategory = availableCategories[currentIndex + 1];
+        nextBtn.href = `game.html?category=${encodeURIComponent(nextCategory)}`;
+        nextLabel.textContent = nextCategory;
+        nextBtn.classList.remove('hidden');
+    } else {
+        nextBtn.classList.add('hidden');
+    }
+}
 
 // Initialize or resume game
 async function initializeGame() {
@@ -443,6 +508,9 @@ function showSuccess(match, guesses, wasCorrectGuess = null, allPictures = null)
     } else {
         imageSummary.classList.add('hidden');
     }
+
+    // Update navigation to other quizzes
+    updateQuizNavigation();
 }
 
 // Convert YouTube URL to embed URL
@@ -494,6 +562,42 @@ function getOrdinalSuffix(num) {
     return num + 'th';
 }
 
+// Calculate score for a quiz based on guess count
+// 1st guess: 256, 2nd: 128, 3rd: 64, etc.
+function calculateScore(guesses, success) {
+    if (!success) return 0;
+    return Math.pow(2, 9 - guesses); // 256, 128, 64, 32, 16, 8, 4, 2
+}
+
+// Get all completed quizzes for today from localStorage
+function getAllTodayQuizzes() {
+    const today = getTodayString();
+    const quizzes = [];
+
+    // Scan all localStorage keys for today's quiz results
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('freezetune_game_state_')) {
+            try {
+                const state = JSON.parse(localStorage.getItem(key));
+                if (state && state.date === today && state.completed) {
+                    quizzes.push({
+                        category: state.category,
+                        guesses: state.guessCount,
+                        success: state.lastGameResult ? state.lastGameResult.success : false
+                    });
+                }
+            } catch (e) {
+                console.error('Error parsing quiz state:', e);
+            }
+        }
+    }
+
+    // Sort by category name for consistent display
+    quizzes.sort((a, b) => a.category.localeCompare(b.category));
+    return quizzes;
+}
+
 // Format date as DD.MM.YY
 function formatDate() {
     const now = new Date();
@@ -503,48 +607,55 @@ function formatDate() {
     return `${day}.${month}.${year}`;
 }
 
-// Generate emoji chain for share text
+// Generate emoji chain for a single quiz
 function generateEmojiChain(guesses, success) {
     const filmEmoji = '🎞️';
-    //const arrowEmoji = '➜';
-    const successEmoji = '🎵';
     const failEmoji = '🔇';
 
-    let chain = filmEmoji;
-    for (let i = 1; i < guesses; i++) {
-        chain += `  ${filmEmoji}`;
+    // Build film strip chain (one per guess/image seen)
+    let chain = '';
+    for (let i = 0; i < guesses; i++) {
+        chain += filmEmoji + ' ';
     }
-    chain += `  ${success ? successEmoji : failEmoji}`;
+
+    // Add result emoji at the end
+    if (success) {
+        if (guesses === 1) chain += '🥇';
+        else if (guesses === 2) chain += '🥈';
+        else if (guesses === 3) chain += '🥉';
+        else chain += '🏅';
+    } else {
+        chain += failEmoji;
+    }
 
     return chain;
 }
 
-// Generate share text
+// Generate share text for all completed quizzes today
 function generateShareText() {
-    const { guesses, success } = lastGameResult;
+    const quizzes = getAllTodayQuizzes();
     const date = formatDate();
-    const emojiChain = generateEmojiChain(guesses, success);
 
-    // Add medal for top 3 guesses
-    let medal = '';
-    if (success) {
-        if (guesses === 1) medal = '🥇';
-        else if (guesses === 2) medal = '🥈';
-        else if (guesses === 3) medal = '🥉';
-        else medal='🏅';
-    } else {
-        medal='🫤';
+    // If no completed quizzes, fall back to current game result
+    if (quizzes.length === 0) {
+        const { guesses, success } = lastGameResult;
+        const emojiChain = generateEmojiChain(guesses, success);
+        const score = calculateScore(guesses, success);
+        return `FreezeTune Quiz ${date}\n\n${currentCategory}: ${emojiChain}\n\nScore: ${score}\n\n#FreezeTune freezetune.com`;
     }
 
-    let headerText;
-    if (success) {
-        //const ordinal = getOrdinalSuffix(guesses);
-        headerText = `${medal} FreezeTune ${currentCategory} ${guesses}/8 | ${date}`;
-    } else {
-        headerText = `${medal} FreezeTune ${currentCategory} not solved | ${date}`;
+    // Build the share text with all quizzes
+    let totalScore = 0;
+    let quizLines = [];
+
+    for (const quiz of quizzes) {
+        const emojiChain = generateEmojiChain(quiz.guesses, quiz.success);
+        const score = calculateScore(quiz.guesses, quiz.success);
+        totalScore += score;
+        quizLines.push(`${quiz.category}: ${emojiChain}`);
     }
 
-    return `${headerText}\n${emojiChain}\n\nfreezetune.com\n#FreezeTune`;
+    return `FreezeTune Quiz ${date}\n\n${quizLines.join('\n')}\n\nScore: ${totalScore}\n\n#FreezeTune freezetune.com`;
 }
 
 // Share results function
