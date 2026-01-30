@@ -37,8 +37,7 @@ public class UserLogic : IUserLogic
 
     public bool ValuesAreCorrect(string category, string interpret, string title)
     {
-        var todaysRiddle = _databaseRepository.GetForDay(category,
-            new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day));
+        var todaysRiddle = _databaseRepository.GetForToday(category);
         if (todaysRiddle == null) throw new Exception("Data is missing");
 
         var levInterpretValue = GetLevenshtein(todaysRiddle.Interpret, interpret);
@@ -48,8 +47,7 @@ public class UserLogic : IUserLogic
     
     public CalculationResult TakeAGuess(string category, Guess guess)
     {
-        var todaysRiddle = _databaseRepository.GetForDay(category,
-            new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day));
+        var todaysRiddle = _databaseRepository.GetForToday(category);
         if (todaysRiddle == null) throw new Exception("Data is missing");
 
         var levInterpretValue = GetLevenshtein(todaysRiddle.Interpret, guess.Interpret);
