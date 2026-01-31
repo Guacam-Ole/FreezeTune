@@ -11,5 +11,6 @@ public interface IDatabaseRepository
     DateOnly? AvailableUntil(string category);
     void AddStats(string category, int numberOfGuesses, bool success);
     List<Stats> GetMonthlyStats(string category);
+    int CountForCategory(string category);
 
 }

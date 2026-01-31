@@ -20,9 +20,9 @@ public class ImagesController : Controller
     }
 
     [HttpGet("Categories")]
-    public List<string> GetCategories()
+    public Dictionary<string,int> GetCategories()
     {
-        return _config.Categories;
+        return _config.Categories.ToDictionary(category => category, category => _databaseRepository.CountForCategory(category));
     }
 
     [HttpPost]

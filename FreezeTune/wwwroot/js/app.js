@@ -107,7 +107,8 @@ async function loadCategories() {
     try {
         const response = await fetch('/Image/Categories');
         if (response.ok) {
-            availableCategories = await response.json();
+            const categories = await response.json();
+            availableCategories = Object.keys(categories).filter(cat => categories[cat] > 0);
         }
     } catch (e) {
         console.error('Error loading categories:', e);
@@ -116,33 +117,26 @@ async function loadCategories() {
 
 // Update quiz navigation buttons based on current category position
 function updateQuizNavigation() {
-    const quizNavigation = document.getElementById('quiz-navigation');
     const prevBtn = document.getElementById('prev-quiz-btn');
     const nextBtn = document.getElementById('next-quiz-btn');
     const prevLabel = document.getElementById('prev-quiz-label');
     const nextLabel = document.getElementById('next-quiz-label');
 
-    if (!quizNavigation || availableCategories.length <= 1) {
-        if (quizNavigation) quizNavigation.classList.add('hidden');
+    if (availableCategories.length <= 1) {
+        prevBtn.classList.add('hidden');
+        nextBtn.classList.add('hidden');
         return;
     }
 
     const currentIndex = availableCategories.indexOf(currentCategory);
     if (currentIndex === -1) {
-        quizNavigation.classList.add('hidden');
+        prevBtn.classList.add('hidden');
+        nextBtn.classList.add('hidden');
         return;
     }
 
     const hasPrev = currentIndex > 0;
     const hasNext = currentIndex < availableCategories.length - 1;
-
-    // Show navigation container if there's at least one direction to go
-    if (hasPrev || hasNext) {
-        quizNavigation.classList.remove('hidden');
-    } else {
-        quizNavigation.classList.add('hidden');
-        return;
-    }
 
     // Previous button
     if (hasPrev) {
@@ -641,7 +635,8 @@ function generateShareText() {
         const { guesses, success } = lastGameResult;
         const emojiChain = generateEmojiChain(guesses, success);
         const score = calculateScore(guesses, success);
-        return `FreezeTune Quiz ${date}\n\n${currentCategory}: ${emojiChain}\n\nScore: ${score}\n\n#FreezeTune freezetune.com`;
+        const guessDisplay = success ? `${guesses}/8` : '-/8';
+        return `FreezeTune Quiz ${date}\n\n${currentCategory}: ${emojiChain} ${guessDisplay}\n\nScore: ${score}\n\n#FreezeTune freezetune.com`;
     }
 
     // Build the share text with all quizzes
@@ -652,7 +647,8 @@ function generateShareText() {
         const emojiChain = generateEmojiChain(quiz.guesses, quiz.success);
         const score = calculateScore(quiz.guesses, quiz.success);
         totalScore += score;
-        quizLines.push(`${quiz.category}: ${emojiChain}`);
+        const guessDisplay = quiz.success ? `${quiz.guesses}/8` : '-/8';
+        quizLines.push(`${quiz.category}: ${emojiChain} ${guessDisplay}`);
     }
 
     return `FreezeTune Quiz ${date}\n\n${quizLines.join('\n')}\n\nScore: ${totalScore}\n\n#FreezeTune freezetune.com`;

@@ -13,9 +13,10 @@ async function loadCategories() {
         }
 
         const categories = await response.json();
+        const categoryNames = Object.keys(categories);
 
         categorySelect.innerHTML = '';
-        categories.forEach(category => {
+        categoryNames.forEach(category => {
             const option = document.createElement('option');
             option.value = category;
             option.textContent = category;
@@ -23,8 +24,8 @@ async function loadCategories() {
         });
 
         // Load stats for the first category
-        if (categories.length > 0) {
-            loadStats(categories[0]);
+        if (categoryNames.length > 0) {
+            loadStats(categoryNames[0]);
         }
     } catch (error) {
         showError('Failed to load categories: ' + error.message);

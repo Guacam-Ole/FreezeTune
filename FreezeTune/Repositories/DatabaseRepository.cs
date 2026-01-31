@@ -17,12 +17,12 @@ public class DatabaseRepository : IDatabaseRepository
         return $"{_config.BasePath}/db/dailies_{category}.db";
     }
 
-    public Daily? GetForDay(string category, DateOnly date)
-    {
-        using var db = new LiteDatabase(GetDbName(category));
-        var dailies = db.GetCollection<Daily>();
-        return dailies.FindOne(q => q.Date == date);
-    }
+    // public Daily? GetForDay(string category, DateOnly date)
+    // {
+    //     using var db = new LiteDatabase(GetDbName(category));
+    //     var dailies = db.GetCollection<Daily>();
+    //     return dailies.FindOne(q => q.Date == date);
+    // }
 
     public Daily GetForToday(string category)
     {
@@ -36,6 +36,13 @@ public class DatabaseRepository : IDatabaseRepository
         var nextQuizId = randomizer.Next(dailies.Count());
         var oldQuiz = dailies.FindAll().ElementAt(nextQuizId);
         return oldQuiz;
+    }
+
+    public int CountForCategory(string category)
+    {
+        using var db = new LiteDatabase(GetDbName(category));
+        var dailies = db.GetCollection<Daily>();
+        return dailies.Count();
     }
 
     public DateOnly? LastTimeWeHad(string category, string interpret, string title)

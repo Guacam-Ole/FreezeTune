@@ -94,13 +94,14 @@
             }
 
             const categories = await response.json();
+            const categoryNames = Object.keys(categories).filter(cat => categories[cat] > 0);
 
-            if (categories.length === 0) {
+            if (categoryNames.length === 0) {
                 container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No categories available.</p>';
                 return;
             }
 
-            container.innerHTML = categories.map(category => `
+            container.innerHTML = categoryNames.map(category => `
                 <a href="game.html?category=${encodeURIComponent(category)}" class="category-card">
                     <h2>${escapeHtml(category)}</h2>
                     <p>Play the daily ${escapeHtml(category)} challenge</p>
