@@ -416,6 +416,44 @@ header h1 {
     opacity: 0.8;
 }
 
+/* Quiz Navigation */
+.quiz-navigation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-top: 8px;
+}
+
+.quiz-nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 16px;
+    background: var(--surface-light);
+    color: var(--text-primary);
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    min-width: 100px;
+    justify-content: center;
+}
+
+.quiz-nav-btn:hover {
+    background: var(--primary-color);
+    transform: translateY(-2px);
+}
+
+.quiz-nav-btn .nav-arrow {
+    font-size: 1.1rem;
+}
+
+/* Keep share button styling within navigation */
+.quiz-navigation .share-results-btn {
+    margin-top: 0;
+}
+
 /* Error Message */
 .error-message {
     position: fixed;

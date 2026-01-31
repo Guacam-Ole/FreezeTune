@@ -20,22 +20,22 @@ public class ImagesController : Controller
     }
 
     [HttpGet("Categories")]
-    public List<string> GetCategories()
+    public Dictionary<string,int> GetCategories()
     {
-        return _config.Categories;
+        return _config.Categories.ToDictionary(category => category, category => _databaseRepository.CountForCategory(category));
     }
 
     [HttpPost]
     public Result Guess(string category, [FromBody] Guess guess)
     {
-        var date = new DateOnly(DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day);
+        var todaysRiddle = _databaseRepository.GetForToday(category);
         var guessResult = _userLogic.TakeAGuess(category, guess);
         var result = new Result
         {
             Guesses = guess.GuessCount,
             InterpretCorrect = guessResult.InterpretMatch,
             TitleCorrect = guessResult.TitleMatch,
-            Match = guessResult.Match,
+            Match = guessResult.Match
         };
 
         if (guess.GuessCount >= 6 || result.InterpretCorrect)
@@ -50,7 +50,7 @@ public class ImagesController : Controller
             result.AllPictureContents = [];
             for (var i = 0; i < 8; i++)
             {
-                result.AllPictureContents.Add(_userLogic.GetImage(category, date, i));
+                result.AllPictureContents.Add(_userLogic.GetImage(category, todaysRiddle.Date, i));
             }
         }
 
@@ -58,11 +58,11 @@ public class ImagesController : Controller
 
         if (guess.GuessCount >= 8)
         {
-            result.Match = _databaseRepository.GetForDay(category, date);
+            result.Match = todaysRiddle;
             return result;
         }
 
-        result.NextPictureContents = _userLogic.GetImage(category, date, guess.GuessCount);
+        result.NextPictureContents = _userLogic.GetImage(category, todaysRiddle.Date, guess.GuessCount);
         result.NextPicture = guess.GuessCount + 1;
         return result;
     }
@@ -70,9 +70,8 @@ public class ImagesController : Controller
     [HttpGet("Stream")]
     public IActionResult? GetVideoStream(string category, Guess guess)
     {
-        var date = new DateOnly(DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day);
         if (!_userLogic.ValuesAreCorrect(category, guess.Interpret, guess.Title)) return null; // nice try cheating
-        var daily = _databaseRepository.GetForDay(category, date);
+        var daily = _databaseRepository.GetForToday(category);
         if (!System.IO.File.Exists(daily.VideoFile))
         {
             return NotFound();
@@ -110,14 +109,14 @@ public class ImagesController : Controller
     [HttpGet]
     public Result GetTodaysRiddle(string category)
     {
-        var date = new DateOnly(DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day);
+        var todaysRiddle = _databaseRepository.GetForToday(category);
         return new Result
         {
             Guesses = 0,
             InterpretCorrect = false,
             TitleCorrect = false,
             NextPicture = 1,
-            NextPictureContents = _userLogic.GetImage(category, date, 0)
+            NextPictureContents = _userLogic.GetImage(category, todaysRiddle.Date, 0)
         };
     }
 }

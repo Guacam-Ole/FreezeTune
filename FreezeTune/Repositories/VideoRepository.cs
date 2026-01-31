@@ -191,6 +191,8 @@ public class VideoRepository : IVideoRepository
                     .First();
 
             var videoContents = await youtube.Videos.GetAsync(youtubeUrl);
+            if (videoContents.Duration.HasValue && videoContents.Duration.Value.TotalMinutes > 30)
+                throw new Exception("Too long");
 
             await youtube.Videos.DownloadAsync(
                 [audioStreamInfo, videoStreamInfo],

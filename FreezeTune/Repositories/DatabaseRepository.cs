@@ -11,17 +11,38 @@ public class DatabaseRepository : IDatabaseRepository
     {
         _config = config;
     }
-    
+
     private string GetDbName(string category)
     {
         return $"{_config.BasePath}/db/dailies_{category}.db";
     }
 
-    public Daily? GetForDay(string category, DateOnly date)
+    // public Daily? GetForDay(string category, DateOnly date)
+    // {
+    //     using var db = new LiteDatabase(GetDbName(category));
+    //     var dailies = db.GetCollection<Daily>();
+    //     return dailies.FindOne(q => q.Date == date);
+    // }
+
+    public Daily GetForToday(string category)
+    {
+        var today = new DateOnly(DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day);
+
+        using var db = new LiteDatabase(GetDbName(category));
+        var dailies = db.GetCollection<Daily>();
+        var todaysQuiz = dailies.FindOne(q => q.Date == today);
+        if (todaysQuiz != null) return todaysQuiz;
+        var randomizer = new Random(today.DayNumber);
+        var nextQuizId = randomizer.Next(dailies.Count());
+        var oldQuiz = dailies.FindAll().ElementAt(nextQuizId);
+        return oldQuiz;
+    }
+
+    public int CountForCategory(string category)
     {
         using var db = new LiteDatabase(GetDbName(category));
         var dailies = db.GetCollection<Daily>();
-        return dailies.FindOne(q => q.Date == date);
+        return dailies.Count();
     }
 
     public DateOnly? LastTimeWeHad(string category, string interpret, string title)
@@ -51,7 +72,7 @@ public class DatabaseRepository : IDatabaseRepository
         return DateOnly.FromDayNumber(dailies.Max(q => q.Date.DayNumber));
     }
 
-    public void AddStats(string category,  int numberOfGuesses, bool success)
+    public void AddStats(string category, int numberOfGuesses, bool success)
     {
         var today = new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day);
         using var db = new LiteDatabase(GetDbName(category));
