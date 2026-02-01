@@ -90,3 +90,4 @@ obj
 *.user
 .idea
 docker-compose.yml
+*.zip
