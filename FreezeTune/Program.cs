@@ -5,12 +5,11 @@ using FreezeTune.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration.AddJsonFile("config.json", optional: false, reloadOnChange: true);
+builder.Services.Configure<Config>(builder.Configuration);
 
-var configFile = File.ReadAllText("config.json");
-var cfg =  JsonSerializer.Deserialize<Config> (configFile);
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
-builder.Services.AddSingleton<Config>(cfg);
 builder.Services.AddScoped<IUserLogic, UserLogic>();
 builder.Services.AddScoped<IDatabaseRepository, DatabaseRepository>();
 builder.Services.AddScoped<IImageRepository, ImageRepository>();
