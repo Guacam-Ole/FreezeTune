@@ -1,5 +1,5 @@
-using System.Text.Json;
 using FreezeTune;
+using Microsoft.Extensions.Options;
 using FreezeTune.Logic;
 using FreezeTune.Repositories;
 
@@ -7,6 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.AddJsonFile("config.json", optional: false, reloadOnChange: true);
 builder.Services.Configure<Config>(builder.Configuration);
+builder.Services.AddSingleton<Config>(sp => sp.GetRequiredService<IOptions<Config>>().Value);
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
