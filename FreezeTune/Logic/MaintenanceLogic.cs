@@ -30,9 +30,9 @@ public class MaintenanceLogic:IMaintenanceLogic
         };
     }
 
-    public async Task<Video> Download(string category, Models.Video video)
+    public async Task<Video> Download(string category, Models.Video video, string? sessionId = null)
     {
-        return await _ytRepository.DownloadNFrames(video.Url, video.Date, category, NumberOfFrames);
+        return await _ytRepository.DownloadNFrames(video.Url, video.Date, category, NumberOfFrames, sessionId);
     }
 
     public Dictionary<int, string> GetTmpImages(string category, Video video)

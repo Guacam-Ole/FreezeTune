@@ -2,6 +2,7 @@ using FreezeTune;
 using Microsoft.Extensions.Options;
 using FreezeTune.Logic;
 using FreezeTune.Repositories;
+using FreezeTune.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,7 @@ builder.Services.AddScoped<IDatabaseRepository, DatabaseRepository>();
 builder.Services.AddScoped<IImageRepository, ImageRepository>();
 builder.Services.AddScoped<IVideoRepository, VideoRepository>();
 builder.Services.AddScoped<IMaintenanceLogic, MaintenanceLogic>();
+builder.Services.AddSingleton<ProgressService>();
 
 var app = builder.Build();
 
