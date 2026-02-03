@@ -1,4 +1,5 @@
 using CliWrap;
+using ImageMagick;
 using CliWrap.Buffered;
 using FreezeTune.Models;
 using Microsoft.Playwright;
@@ -77,15 +78,19 @@ public class VideoRepository : IVideoRepository
     private async Task<Video> ExtractFrames(string category, string url, DateOnly date, string author, string title,
         int numberOfFrames)
     {
-        var videoInfo = await FFmpeg.GetMediaInfo(GetTempVideoPathFor(category, date, author, title));
-        var diff = videoInfo.Duration / numberOfFrames;
-        var positions = new List<TimeSpan>();
-        for (var i = 0; i < numberOfFrames; i++)
+        var videoFile = GetTempVideoPathFor(category, date, author, title);
+        if (File.Exists(videoFile))
         {
-            positions.Add(i * diff);
-        }
+            var videoInfo = await FFmpeg.GetMediaInfo(videoFile);
+            var diff = videoInfo.Duration / numberOfFrames;
+            var positions = new List<TimeSpan>();
+            for (var i = 0; i < numberOfFrames; i++)
+            {
+                positions.Add(i * diff);
+            }
 
-        await ExtractSingleFrames(date, category, positions.ToArray());
+            await ExtractSingleFrames(date, category, positions.ToArray());
+        }
 
         return new Video
         {
@@ -130,12 +135,8 @@ public class VideoRepository : IVideoRepository
             if (LastYtFailure != null)
             {
                 Console.WriteLine("Grabbing images because of yt error");
-                await DownloadImagesFromVideo(url); // TODO: Try to get tile + artist
-                
+                (author, title)= await DownloadImagesFromVideo(url, date, category); // TODO: Try to get tile + artist
             }
-
-            
-
         }
         else if (url.Contains("tidal"))
             (author, title) = await DownloadVideoFromTidal(category, url, date);
@@ -144,7 +145,6 @@ public class VideoRepository : IVideoRepository
         if (author == "auth") return new Video { Error = "Requires Tidal Token. Please auth in Docker" };
         return await ExtractFrames(category, url, date, author, title, numberOfFrames);
     }
-
 
     public void CopyImages(string category, DateOnly date, Dictionary<int, int> frames)
     {
@@ -167,32 +167,6 @@ public class VideoRepository : IVideoRepository
             File.Delete(img);
         }
     }
-
-
-    /*
-     // Get stream manifest
-       var videoUrl = "https://youtube.com/watch?v=u_yIGGhubZs";
-       var streamManifest = await youtube.Videos.Streams.GetManifestAsync(videoUrl);
-
-       // Select best audio stream (highest bitrate)
-       var audioStreamInfo = streamManifest
-           .GetAudioStreams()
-           .Where(s => s.Container == Container.Mp4)
-           .GetWithHighestBitrate();
-
-       // Select best video stream (1080p60 in this example)
-       var videoStreamInfo = streamManifest
-           .GetVideoStreams()
-           .Where(s => s.Container == Container.Mp4)
-           .First(s => s.VideoQuality.Label == "1080p60");
-
-       // Download and mux streams into a single file
-       await youtube.Videos.DownloadAsync(
-           [audioStreamInfo, videoStreamInfo],
-           new ConversionRequestBuilder("video.mp4").Build()
-       );
-
-     */
 
     private async Task<(string, string)> DownloadVideoFromYoutube(string category, string youtubeUrl, DateOnly date)
     {
@@ -328,7 +302,7 @@ public class VideoRepository : IVideoRepository
         });
     }
 
-    private async Task<int> GetVideoDuration(string url)
+    private async Task<(int,string,string)> GetVideoMetadata(string url)
     {
         var context = await _browser!.NewContextAsync(new()
         {
@@ -342,15 +316,30 @@ public class VideoRepository : IVideoRepository
         await page.GotoAsync(url);
         await page.WaitForSelectorAsync("video", new PageWaitForSelectorOptions { Timeout = 10000 });
 
-        var duration = await page.EvaluateAsync<double>(@"
+        var metadata = await page.EvaluateAsync<Dictionary<string, object>>(@"
             () => {
                 const video = document.querySelector('video');
-                return video ? video.duration : 0;
+                const duration = video ? video.duration : 0;
+
+                const title = document.querySelector('h1.ytd-watch-metadata yt-formatted-string')?.innerText
+                    || document.querySelector('h1.ytd-video-primary-info-renderer')?.innerText
+                    || '';
+
+                const channel = document.querySelector('#channel-name yt-formatted-string a')?.innerText
+                    || document.querySelector('ytd-channel-name a')?.innerText
+                    || '';
+
+                return { duration, title, channel };
             }
         ");
 
         await context.CloseAsync();
-        return (int)Math.Floor(duration);
+
+        var duration = Convert.ToInt32(Math.Floor(Convert.ToDouble(metadata["duration"])));
+        var title = metadata["title"]?.ToString() ?? "";
+        var channel = metadata["channel"]?.ToString() ?? "";
+
+        return (duration, title, channel);
     }
 
     private static List<int> GenerateTimestamps(int videoDuration, int frameCount)
@@ -490,14 +479,14 @@ public class VideoRepository : IVideoRepository
         _playwright?.Dispose();
     }
 
-    private async Task DownloadImagesFromVideo(string url)
+    private async Task<(string,string)> DownloadImagesFromVideo(string url, DateOnly date, string category)
     {
         if (url.Contains('&'))
         {
             url = url[..url.IndexOf('&')];
         }
         await Initialize();
-        var duration = await GetVideoDuration(url);
+        var (duration, title, channel) = await GetVideoMetadata(url);
 
         var timestamps = GenerateTimestamps(duration, FrameCount);
         Console.WriteLine($"Timestamps: {string.Join(", ", timestamps)}");
@@ -507,11 +496,15 @@ public class VideoRepository : IVideoRepository
         foreach (var (timestamp, data) in frames)
         {
             counter++;
+            var filename = GetImagePathFor(date, category, "tmp", counter++);
             Console.WriteLine($"Capturing Frame {counter}/{FrameCount} bei {timestamp}s...");
-            await File.WriteAllBytesAsync($"frame_{counter:00}_{timestamp}s.jpg", data);
+            
+            using var image = new MagickImage(data);
+            image.Format = MagickFormat.Png;
+            await File.WriteAllBytesAsync(filename, image.ToByteArray());
         }
 
-
         await Cleanup();
+        return (channel, title);
     }
 }
