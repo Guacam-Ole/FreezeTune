@@ -96,13 +96,15 @@ public class DatabaseRepository : IDatabaseRepository
         allStats.Upsert(todaysStats);
     }
 
-    public List<Stats> GetMonthlyStats(string category)
+    public List<Stats> GetQuarterStats(string category)
     {
         var today = new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day);
         using var db = new LiteDatabase(GetDbName(category));
         var allStats = db.GetCollection<Stats>();
 
-        return allStats.Find(q => q.Date.Year == today.Year && q.Date.Month == today.Month).OrderBy(q => q.Date.Day)
+        var thisQuarter = DateOnly.FromDateTime(DateTime.Today.AddMonths(-3));
+        
+        return allStats.Find(q => q.Date.DayNumber>=thisQuarter.DayNumber)
             .ToList();
     }
 }

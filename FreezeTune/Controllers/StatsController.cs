@@ -19,6 +19,6 @@ public class StatsController:ControllerBase
     [HttpGet]
     public List<Stats> GetMonthlyStats(string category)
     {
-        return !_config.Categories.Contains(category) ? throw new Exception("Unknown category") : _databaseRepositor.GetMonthlyStats(category);
+        return !_config.Categories.Contains(category) ? throw new Exception("Unknown category") : _databaseRepositor.GetQuarterStats(category);
     }
 }

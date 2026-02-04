@@ -1,6 +1,12 @@
+using System.Text.RegularExpressions;
 using CliWrap;
+using ImageMagick;
 using CliWrap.Buffered;
 using FreezeTune.Models;
+using FreezeTune.Services;
+using HtmlAgilityPack;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Playwright;
 using Xabe.FFmpeg;
 using YoutubeExplode;
 using YoutubeExplode.Converter;
@@ -11,10 +17,16 @@ namespace FreezeTune.Repositories;
 public class VideoRepository : IVideoRepository
 {
     private readonly Config _config;
+    private readonly ProgressService _progressService;
+    private IPlaywright? _playwright;
+    private IBrowser? _browser;
+    private const int MaxParallelCaptures = 10; // TODO: Config
+    private DateTime? _lastYtFailure = null;
 
-    public VideoRepository(Config config)
+    public VideoRepository(Config config, ProgressService progressService)
     {
         _config = config;
+        _progressService = progressService;
     }
 
     private string GetImagePath(string subDir)
@@ -61,25 +73,31 @@ public class VideoRepository : IVideoRepository
 
     public string? MoveVideoFile(string category, Video video)
     {
-        if (File.Exists(GetVideoPathFor(category, video))) return null;
+        
         var sourceFile = Directory.GetFiles(GetVideoCategoryPath(category)).First();
         var targetFile = GetVideoPathFor(category, video);
+        if (File.Exists(targetFile)) return targetFile; // Targetfile already exist
+        if (!File.Exists(sourceFile)) return null; // Sourcefile does not exist
         File.Move(sourceFile, targetFile);
         return targetFile;
     }
 
     private async Task<Video> ExtractFrames(string category, string url, DateOnly date, string author, string title,
-        int numberOfFrames)
+        int numberOfFrames, Action<int>? onProgress = null)
     {
-        var videoInfo = await FFmpeg.GetMediaInfo(GetTempVideoPathFor(category, date, author, title));
-        var diff = videoInfo.Duration / numberOfFrames;
-        var positions = new List<TimeSpan>();
-        for (var i = 0; i < numberOfFrames; i++)
+        var videoFile = GetTempVideoPathFor(category, date, author, title);
+        if (File.Exists(videoFile))
         {
-            positions.Add(i * diff);
-        }
+            var videoInfo = await FFmpeg.GetMediaInfo(videoFile);
+            var diff = videoInfo.Duration / numberOfFrames;
+            var positions = new List<TimeSpan>();
+            for (var i = 0; i < numberOfFrames; i++)
+            {
+                positions.Add(i * diff);
+            }
 
-        await ExtractSingleFrames(date, category, positions.ToArray());
+            await ExtractSingleFrames(date, category, positions.ToArray(), onProgress);
+        }
 
         return new Video
         {
@@ -100,22 +118,58 @@ public class VideoRepository : IVideoRepository
         }
     }
 
-    public async Task<Video> DownloadNFrames(string url, DateOnly date, string category, int numberOfFrames)
+    public async Task<Video> DownloadNFrames(string url, DateOnly date, string category, int numberOfFrames,
+        string? sessionId = null)
     {
-        string author;
-        string title;
+        var author = "";
+        var title = "";
 
+        void ReportProgress(int percent, string stage)
+        {
+            if (sessionId != null) _progressService.Update(sessionId, percent, stage);
+        }
+
+        ReportProgress(0, "Starte...");
         CleanTemp(category);
+
         if (url.Contains("youtube"))
-            (author, title) = await DownloadVideoFromYoutube(category, url, date);
+        {
+            try
+            {
+                if (_lastYtFailure == null || _lastYtFailure < DateTime.Now.AddHours(-1))
+                {
+                    (author, title) = await DownloadVideoFromYoutube(category, url, date,
+                        p => ReportProgress(p / 2, "YouTube Download"));
+                    _lastYtFailure = null;
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                _lastYtFailure = DateTime.Now;
+            }
+
+            if (_lastYtFailure != null)
+            {
+                Console.WriteLine("Grabbing images because of yt error");
+                (author, title) =
+                    await DownloadImagesFromVideo(url, date, category, numberOfFrames, p => ReportProgress(p / 2, "Frame Capture"));
+            }
+        }
         else if (url.Contains("tidal"))
-            (author, title) = await DownloadVideoFromTidal(category, url, date);
+            (author, title) =
+                await DownloadVideoFromTidal(category, url, date, p => ReportProgress(p / 2, "Tidal Download"));
         else throw new Exception("wrong url");
 
         if (author == "auth") return new Video { Error = "Requires Tidal Token. Please auth in Docker" };
-        return await ExtractFrames(category, url, date, author, title, numberOfFrames);
-    }
 
+        ReportProgress(50, "Extrahiere Frames...");
+        var result = await ExtractFrames(category, url, date, author, title, numberOfFrames,
+            p => ReportProgress(50 + p / 2, "Extrahiere Frames"));
+        ReportProgress(100, "Fertig");
+
+        return result;
+    }
 
     public void CopyImages(string category, DateOnly date, Dictionary<int, int> frames)
     {
@@ -139,34 +193,10 @@ public class VideoRepository : IVideoRepository
         }
     }
 
-
-    /*
-     // Get stream manifest
-       var videoUrl = "https://youtube.com/watch?v=u_yIGGhubZs";
-       var streamManifest = await youtube.Videos.Streams.GetManifestAsync(videoUrl);
-
-       // Select best audio stream (highest bitrate)
-       var audioStreamInfo = streamManifest
-           .GetAudioStreams()
-           .Where(s => s.Container == Container.Mp4)
-           .GetWithHighestBitrate();
-
-       // Select best video stream (1080p60 in this example)
-       var videoStreamInfo = streamManifest
-           .GetVideoStreams()
-           .Where(s => s.Container == Container.Mp4)
-           .First(s => s.VideoQuality.Label == "1080p60");
-
-       // Download and mux streams into a single file
-       await youtube.Videos.DownloadAsync(
-           [audioStreamInfo, videoStreamInfo],
-           new ConversionRequestBuilder("video.mp4").Build()
-       );
-
-     */
-
-    private async Task<(string, string)> DownloadVideoFromYoutube(string category, string youtubeUrl, DateOnly date)
+    private async Task<(string, string)> DownloadVideoFromYoutube(string category, string youtubeUrl, DateOnly date,
+        Action<int>? onProgress = null)
     {
+        Console.WriteLine("Try YT download");
         try
         {
             using var youtube = new YoutubeClient();
@@ -194,10 +224,12 @@ public class VideoRepository : IVideoRepository
             if (videoContents.Duration.HasValue && videoContents.Duration.Value.TotalMinutes > 30)
                 throw new Exception("Too long");
 
+            var progress = new Progress<double>(p => onProgress?.Invoke((int)(p * 100)));
             await youtube.Videos.DownloadAsync(
                 [audioStreamInfo, videoStreamInfo],
                 new ConversionRequestBuilder(GetTempVideoPathFor(category, date, videoContents.Author.ChannelTitle,
-                    videoContents.Title)).Build()
+                    videoContents.Title)).Build(),
+                progress
             );
             return (videoContents.Author.ChannelTitle, videoContents.Title);
         }
@@ -208,13 +240,15 @@ public class VideoRepository : IVideoRepository
         }
     }
 
-    private async Task<(string, string)> DownloadVideoFromTidal(string category, string tidalUrl, DateOnly date)
+    private async Task<(string, string)> DownloadVideoFromTidal(string category, string tidalUrl, DateOnly date,
+        Action<int>? onProgress = null)
     {
         const string shellCommand = "tidal-dl-ng";
         const string shellConfig = "cfg";
 
         try
         {
+            Console.WriteLine("Try download from tidal");
             await Cli.Wrap(shellCommand)
                 .WithArguments([
                     shellConfig, "download_base_path",
@@ -243,12 +277,36 @@ public class VideoRepository : IVideoRepository
                 return ("auth", "auth! das Spiel ist auth!");
             }
 
+            var progressCts = new CancellationTokenSource();
+            var progressTask = Task.Run(async () =>
+            {
+                var startTime = DateTime.Now;
+                const int totalSeconds = 30;
+                while (!progressCts.Token.IsCancellationRequested)
+                {
+                    var elapsed = (DateTime.Now - startTime).TotalSeconds;
+                    var percent = Math.Min(99, (int)(elapsed / totalSeconds * 100));
+                    onProgress?.Invoke(percent);
+                    await Task.Delay(300, progressCts.Token).ConfigureAwait(false);
+                }
+            }, progressCts.Token);
 
             var response = await Cli.Wrap(shellCommand)
                 .WithArguments([
                     "dl", tidalUrl
                 ])
                 .ExecuteBufferedAsync();
+
+            progressCts.Cancel();
+            try
+            {
+                await progressTask;
+            }
+            catch (OperationCanceledException)
+            {
+            }
+
+            onProgress?.Invoke(100);
 
             if (!response.IsSuccess) throw new Exception("Download failed");
 
@@ -266,18 +324,21 @@ public class VideoRepository : IVideoRepository
         }
     }
 
-    private async Task ExtractSingleFrames(DateOnly date, string category, TimeSpan[] positions)
+    private async Task ExtractSingleFrames(DateOnly date, string category, TimeSpan[] positions,
+        Action<int>? onProgress = null)
     {
         try
         {
             var counter = 0;
             var filename = Directory.GetFiles(GetVideoCategoryPath(category), "*.mp4").First();
+            var total = positions.Length;
 
             foreach (var timeSpan in positions)
             {
                 var res = await FFmpeg.Conversions.FromSnippet.Snapshot(filename,
                     GetImagePathFor(date, category, "tmp", counter++), timeSpan);
                 await res.Start();
+                onProgress?.Invoke(counter * 100 / total);
             }
         }
         catch (Exception e)
@@ -285,5 +346,241 @@ public class VideoRepository : IVideoRepository
             Console.WriteLine(e);
             throw;
         }
+    }
+
+
+    private async Task Initialize()
+    {
+        _playwright = await Playwright.CreateAsync();
+        _browser = await _playwright.Chromium.LaunchAsync(new()
+        {
+            Headless = true,
+            Args = ["--disable-blink-features=AutomationControlled"]
+        });
+    }
+
+    private async Task<(int, string, string)> GetVideoMetadata(string url)
+    {
+        var context = await _browser!.NewContextAsync(new()
+        {
+            UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            ViewportSize = new() { Width = 1280, Height = 720 },
+            Locale = "en-US"
+        });
+
+        var page = await context.NewPageAsync();
+
+        await page.GotoAsync(url);
+        await page.WaitForSelectorAsync("video", new PageWaitForSelectorOptions { Timeout = 10000 });
+
+        var html = await page.ContentAsync();
+        await context.CloseAsync();
+
+        var doc = new HtmlDocument();
+        doc.LoadHtml(html);
+
+        // Extract title from Schema.org meta tag
+        var title = doc.DocumentNode.SelectSingleNode("//meta[@itemprop='name']")?.GetAttributeValue("content", "")
+                    ?? doc.DocumentNode.SelectSingleNode("//meta[@property='og:title']")?.GetAttributeValue("content", "")
+                    ?? "";
+
+        // Extract channel from Schema.org author span
+        var channel = doc.DocumentNode.SelectSingleNode("//span[@itemprop='author']//link[@itemprop='name']")?.GetAttributeValue("content", "")
+                      ?? "";
+
+        // Extract duration from Schema.org (ISO 8601 format: PT3M34S)
+        var duration = 0;
+        var isoDuration = doc.DocumentNode.SelectSingleNode("//meta[@itemprop='duration']")?.GetAttributeValue("content", "");
+        if (!string.IsNullOrEmpty(isoDuration))
+        {
+            var match = Regex.Match(isoDuration, @"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?");
+            if (match.Success)
+            {
+                var hours = string.IsNullOrEmpty(match.Groups[1].Value) ? 0 : int.Parse(match.Groups[1].Value);
+                var minutes = string.IsNullOrEmpty(match.Groups[2].Value) ? 0 : int.Parse(match.Groups[2].Value);
+                var seconds = string.IsNullOrEmpty(match.Groups[3].Value) ? 0 : int.Parse(match.Groups[3].Value);
+                duration = hours * 3600 + minutes * 60 + seconds;
+            }
+        }
+
+        if (title != null && channel != null && title.StartsWith(channel)) title = title[channel.Length..];
+        return (duration, title, channel);
+    }
+
+    private static List<int> GenerateTimestamps(int videoDuration, int frameCount)
+    {
+        var timestamps = new List<int>();
+        var interval = (double)videoDuration / (frameCount + 1);
+
+        for (var i = 1; i <= frameCount; i++)
+        {
+            timestamps.Add((int)Math.Floor(interval * i));
+        }
+
+        return timestamps;
+    }
+
+    private async Task<List<(int timestamp, byte[] data)>> CaptureFrames(string url, List<int> timestamps,
+        Action<int>? onProgress = null)
+    {
+        var semaphore = new SemaphoreSlim(MaxParallelCaptures);
+        var completedCount = 0;
+        var total = timestamps.Count;
+
+        var tasks = timestamps.Select(async timestamp =>
+        {
+            var result = await CaptureFrameWithSemaphore(url, timestamp, semaphore);
+            var completed = Interlocked.Increment(ref completedCount);
+            onProgress?.Invoke(completed * 100 / total);
+            return result;
+        }).ToList();
+
+        var results = await Task.WhenAll(tasks);
+        return results.OrderBy(r => r.Item1).ToList();
+    }
+
+    private async Task<(int, byte[])> CaptureFrameWithSemaphore(string url, int seconds, SemaphoreSlim semaphore)
+    {
+        await semaphore.WaitAsync();
+        try
+        {
+            var data = await CaptureFrame(url, seconds);
+            Console.WriteLine($"received frame at {seconds}");
+            return (seconds, data);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            throw;
+        }
+        finally
+        {
+            semaphore.Release();
+        }
+    }
+
+    private async Task<byte[]> CaptureFrame(string url, int seconds)
+    {
+        var context = await _browser!.NewContextAsync(new BrowserNewContextOptions
+        {
+            UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            ViewportSize = new ViewportSize { Width = 720, Height = 480 },
+            Locale = "en-US"
+        });
+
+        var page = await context.NewPageAsync();
+
+        await page.GotoAsync($"{url}&t={seconds}s&cc_load_policy=0");
+
+        await page.WaitForSelectorAsync("video", new PageWaitForSelectorOptions { Timeout = 10000 });
+
+        try
+        {
+            var rejectButton = await page.WaitForSelectorAsync(
+                "button:has-text('Reject all')",
+                new PageWaitForSelectorOptions { Timeout = 4000 });
+
+            if (rejectButton != null)
+            {
+                await rejectButton.ClickAsync();
+                await Task.Delay(500);
+            }
+            else
+            {
+                Console.WriteLine("no cookie warning received");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+
+        await page.WaitForFunctionAsync(
+            """
+            () => {
+                const video = document.querySelector('video');
+                return video && video.readyState >= 2 && !video.seeking;
+                  }
+            """, new PageWaitForFunctionOptions { Timeout = 10000 });
+
+        await page.EvaluateAsync(
+            """
+               (seconds) => {
+                   const video = document.querySelector('video');
+                   if (video) {
+                       video.currentTime = seconds;
+                       video.pause();
+
+                       const tracks = video.textTracks;
+                       for (let i = 0; i < tracks.length; i++) {
+                           tracks[i].mode = 'disabled';
+                       }
+                   }
+               }
+            """, seconds);
+
+        await Task.Delay(1500);
+
+        await page.EvaluateAsync(
+            """
+             () => {
+                 const overlays = document.querySelectorAll(
+                     '.ytp-pause-overlay, ' +
+                     '.ytp-chrome-top, ' +
+                     '.ytp-chrome-bottom, ' +
+                     '.ytp-gradient-top, ' +
+                     '.ytp-gradient-bottom, ' +
+                     '.ytp-caption-window-container, ' +
+                     '.caption-window'
+                 );
+                 overlays.forEach(el => el.style.display = 'none');
+             }
+            """);
+
+        await Task.Delay(200);
+
+        var video = await page.QuerySelectorAsync("video");
+        var screenshot = await video!.ScreenshotAsync(new ElementHandleScreenshotOptions
+        {
+            Type = ScreenshotType.Png,
+            //Quality = 75
+        });
+
+        await context.CloseAsync();
+        return screenshot;
+    }
+
+    private async Task Cleanup()
+    {
+        if (_browser != null) await _browser.CloseAsync();
+        _playwright?.Dispose();
+    }
+
+    private async Task<(string, string)> DownloadImagesFromVideo(string url, DateOnly date, string category, int frameCount,
+        Action<int>? onProgress = null)
+    {
+        if (url.Contains('&'))
+        {
+            url = url[..url.IndexOf('&')];
+        }
+
+        await Initialize();
+        var (duration, title, channel) = await GetVideoMetadata(url);
+
+        var timestamps = GenerateTimestamps(duration, frameCount);
+        Console.WriteLine($"Timestamps: {string.Join(", ", timestamps)}");
+
+        var frames = await CaptureFrames(url, timestamps, onProgress);
+        var counter = 0;
+        foreach (var (timestamp, data) in frames)
+        {
+            var filename = GetImagePathFor(date, category, "tmp", counter++);
+            Console.WriteLine($"Capturing Frame {counter}/{frameCount} bei {timestamp}s...");
+
+            await File.WriteAllBytesAsync(filename, data);
+        }
+
+        await Cleanup();
+        return (channel, title);
     }
 }

@@ -28,6 +28,17 @@ RUN apt-get update && apt-get install -y ffmpeg \
 # Copy the built .NET app
 COPY --from=build-env /App/out .
 
+# Install Playwright dependencies and Chromium
+RUN apt-get update && apt-get install -y \
+    libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 \
+    libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
+    libgbm1 libasound2 libpango-1.0-0 libcairo2 libatspi2.0-0 \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install Playwright browsers using the .NET tool
+RUN dotnet tool install --global Microsoft.Playwright.CLI \
+    && /root/.dotnet/tools/playwright install chromium
+
 # Install tidal-dl-ng from local fork
 COPY tidal-dl-ng-For-DJ-master.zip /tmp/
 RUN python3.12 -m venv /opt/tidal-dl-ng \

@@ -1,21 +1,23 @@
-using System.Text.Json;
 using FreezeTune;
+using Microsoft.Extensions.Options;
 using FreezeTune.Logic;
 using FreezeTune.Repositories;
+using FreezeTune.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration.AddJsonFile("config.json", optional: false, reloadOnChange: true);
+builder.Services.Configure<Config>(builder.Configuration);
+builder.Services.AddSingleton<Config>(sp => sp.GetRequiredService<IOptions<Config>>().Value);
 
-var configFile = File.ReadAllText("config.json");
-var cfg =  JsonSerializer.Deserialize<Config> (configFile);
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
-builder.Services.AddSingleton<Config>(cfg);
 builder.Services.AddScoped<IUserLogic, UserLogic>();
 builder.Services.AddScoped<IDatabaseRepository, DatabaseRepository>();
 builder.Services.AddScoped<IImageRepository, ImageRepository>();
 builder.Services.AddScoped<IVideoRepository, VideoRepository>();
 builder.Services.AddScoped<IMaintenanceLogic, MaintenanceLogic>();
+builder.Services.AddSingleton<ProgressService>();
 
 var app = builder.Build();
 
@@ -27,7 +29,15 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseDefaultFiles();
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers.CacheControl = "no-cache, no-store, must-revalidate";
+        ctx.Context.Response.Headers.Pragma = "no-cache";
+        ctx.Context.Response.Headers.Expires = "0";
+    }
+});
 
 app.UseAuthorization();
 

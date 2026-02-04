@@ -1,5 +1,6 @@
 using FreezeTune.Logic;
 using FreezeTune.Models;
+using FreezeTune.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FreezeTune.Controllers;
@@ -9,11 +10,13 @@ public class MaintenanceController : ControllerBase
 {
     private readonly IMaintenanceLogic _maintenanceLogic;
     private readonly Config _config;
+    private readonly ProgressService _progressService;
 
-    public MaintenanceController(IMaintenanceLogic maintenanceLogic, Config config)
+    public MaintenanceController(IMaintenanceLogic maintenanceLogic, Config config, ProgressService progressService)
     {
         _maintenanceLogic = maintenanceLogic;
         _config = config;
+        _progressService = progressService;
     }
 
     private void ValidateKey(string category, string key)
@@ -32,19 +35,30 @@ public class MaintenanceController : ControllerBase
     }
 
     [HttpPost("Download")]
-    public async Task<Video> Download(string apiKey, string category, [FromBody] Video video)
+    public async Task<Video> Download(string apiKey, string category, string? sessionId, [FromBody] Video video)
     {
         try
         {
             ValidateKey(category, apiKey);
 
-            return await _maintenanceLogic.Download(category, video);
+            var result = await _maintenanceLogic.Download(category, video, sessionId);
+            if (sessionId != null) _progressService.Remove(sessionId);
+            return result;
         }
         catch (Exception e)
         {
             Console.WriteLine(e);
+            if (sessionId != null) _progressService.Remove(sessionId);
             return new Video { Error = e.Message };
         }
+    }
+
+    [HttpGet("Progress")]
+    public ActionResult<ProgressInfo> GetProgress(string sessionId)
+    {
+        var progress = _progressService.Get(sessionId);
+        if (progress == null) return NotFound();
+        return progress;
     }
 
     [HttpPost("Temp")]

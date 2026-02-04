@@ -10,9 +10,13 @@ const selectedInfo = document.getElementById('selected-info');
 const selectedCount = document.getElementById('selected-count');
 const addVideoBtn = document.getElementById('add-video-btn');
 const errorMessage = document.getElementById('error-message');
+const progressContainer = document.getElementById('progress-container');
+const progressFill = document.getElementById('progress-fill');
+const progressText = document.getElementById('progress-text');
 
 let currentVideo = null;
 let selectedImages = [];
+let progressInterval = null;
 
 window.addEventListener('DOMContentLoaded', loadCategories);
 downloadBtn.addEventListener('click', handleDownload);
@@ -63,6 +67,43 @@ async function loadDate() {
     }
 }
 
+function generateSessionId() {
+    return 'session-' + Date.now() + '-' + Math.random().toString(36).substring(2, 11);
+}
+
+function updateProgress(percent, stage) {
+    progressFill.style.width = percent + '%';
+    progressText.textContent = `${percent}% - ${stage}`;
+}
+
+function startProgressPolling(sessionId) {
+    progressContainer.style.display = 'block';
+    updateProgress(0, 'Starte...');
+
+    progressInterval = setInterval(async () => {
+        try {
+            const response = await fetch(`/Maintenance/Progress?sessionId=${encodeURIComponent(sessionId)}`);
+            if (response.ok) {
+                const progress = await response.json();
+                updateProgress(progress.percent, progress.stage);
+            }
+        } catch (e) {
+            // Ignore polling errors
+        }
+    }, 500);
+}
+
+function stopProgressPolling() {
+    if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+    }
+    updateProgress(100, 'Fertig');
+    setTimeout(() => {
+        progressContainer.style.display = 'none';
+    }, 1000);
+}
+
 async function handleDownload() {
     const apiKey = apikeyInput.value.trim();
     const url = urlInput.value.trim();
@@ -75,10 +116,13 @@ async function handleDownload() {
     downloadBtn.disabled = true;
     downloadBtn.textContent = 'Downloading...';
 
+    const sessionId = generateSessionId();
+    startProgressPolling(sessionId);
+
     try {
         const video = { ...currentVideo, url: url, date: parseDate(dateInput.value.trim()) };
 
-        const response = await fetch(`/Maintenance/Download?apiKey=${encodeURIComponent(apiKey)}&category=${encodeURIComponent(getSelectedCategory())}`, {
+        const response = await fetch(`/Maintenance/Download?apiKey=${encodeURIComponent(apiKey)}&category=${encodeURIComponent(getSelectedCategory())}&sessionId=${encodeURIComponent(sessionId)}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -107,6 +151,7 @@ async function handleDownload() {
         showError('Download failed: ' + error.message);
         console.error('Error downloading:', error);
     } finally {
+        stopProgressPolling();
         downloadBtn.disabled = false;
         downloadBtn.textContent = 'Download';
     }
