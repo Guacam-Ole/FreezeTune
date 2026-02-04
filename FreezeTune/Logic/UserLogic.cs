@@ -1,13 +1,13 @@
 using System.Text.RegularExpressions;
-using Fastenshtein;
 using FreezeTune.Models;
+using F23.StringSimilarity;
 using FreezeTune.Repositories;
 
 namespace FreezeTune.Logic;
 
 public class UserLogic : IUserLogic
 {
-    private readonly uint _maxDistance;
+    private readonly double _maxDistance;
     private readonly IDatabaseRepository _databaseRepository;
     private readonly IImageRepository _imageRepositor;
     
@@ -26,13 +26,13 @@ public class UserLogic : IUserLogic
         return _imageRepositor.GetBase64Image(category, date, currentNumber);
     }
 
-    private int GetLevenshtein(string original, string guess)
+    private double GetDistance(string original, string guess)
     {
         var cleanedOriginal = Regex.Replace(original.ToLower(), @"[^a-zA-Z0-9\s]", "");
         var cleanedGuess = Regex.Replace(guess.ToLower(), @"[^a-zA-Z0-9\s]", "");
 
-        var lev = new Levenshtein(cleanedOriginal);
-        return lev.DistanceFrom(cleanedGuess);
+        var jaro = new JaroWinkler();
+        return jaro.Distance(cleanedOriginal, cleanedGuess);
     }
 
     public bool ValuesAreCorrect(string category, string interpret, string title)
@@ -40,9 +40,9 @@ public class UserLogic : IUserLogic
         var todaysRiddle = _databaseRepository.GetForToday(category);
         if (todaysRiddle == null) throw new Exception("Data is missing");
 
-        var levInterpretValue = GetLevenshtein(todaysRiddle.Interpret, interpret);
-        var levTitleValue = GetLevenshtein(todaysRiddle.Title, title);
-        return levInterpretValue <= _maxDistance && levTitleValue <= _maxDistance;
+        var artistDistance = GetDistance(todaysRiddle.Interpret, interpret);
+        var titleDistance  = GetDistance(todaysRiddle.Title, title);
+        return artistDistance <= _maxDistance && titleDistance <= _maxDistance;
     }
     
     public CalculationResult TakeAGuess(string category, Guess guess)
@@ -50,15 +50,13 @@ public class UserLogic : IUserLogic
         var todaysRiddle = _databaseRepository.GetForToday(category);
         if (todaysRiddle == null) throw new Exception("Data is missing");
 
-        var levInterpretValue = GetLevenshtein(todaysRiddle.Interpret, guess.Interpret);
-        var levTitleValue = GetLevenshtein(todaysRiddle.Title, guess.Title);
+        var artistDistance = GetDistance(todaysRiddle.Interpret, guess.Interpret);
+        var titleDistance = GetDistance(todaysRiddle.Title, guess.Title);
 
         var result = new CalculationResult
         {
-            InterpretMatch = levInterpretValue <= _maxDistance,
-            TitleMatch = levTitleValue <= _maxDistance,
-            LevenshteinInterpret = levInterpretValue,
-            LevenshteinTitle = levTitleValue,
+            InterpretMatch = artistDistance <= _maxDistance,
+            TitleMatch = titleDistance<= _maxDistance
         };
         if (result.InterpretMatch && result.TitleMatch)
         {

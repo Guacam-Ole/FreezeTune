@@ -2,5 +2,5 @@
   "BasePath": "/data",
   "Width": 640,
   "Height": 480,
-  "MaxDistance": 3
+  "MaxDistance": 0.1
 }
