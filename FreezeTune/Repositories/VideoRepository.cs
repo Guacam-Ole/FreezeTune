@@ -1,11 +1,9 @@
 using System.Text.RegularExpressions;
 using CliWrap;
-using ImageMagick;
 using CliWrap.Buffered;
 using FreezeTune.Models;
 using FreezeTune.Services;
 using HtmlAgilityPack;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Playwright;
 using Xabe.FFmpeg;
 using YoutubeExplode;
@@ -73,11 +71,11 @@ public class VideoRepository : IVideoRepository
 
     public string? MoveVideoFile(string category, Video video)
     {
-        
-        var sourceFile = Directory.GetFiles(GetVideoCategoryPath(category)).First();
+        var sourceFile = Directory.GetFiles(GetVideoCategoryPath(category)).FirstOrDefault();
+        if (sourceFile==null) return null; // Sourcefile does not exist
         var targetFile = GetVideoPathFor(category, video);
         if (File.Exists(targetFile)) return targetFile; // Targetfile already exist
-        if (!File.Exists(sourceFile)) return null; // Sourcefile does not exist
+        
         File.Move(sourceFile, targetFile);
         return targetFile;
     }
