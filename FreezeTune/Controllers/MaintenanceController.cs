@@ -11,12 +11,14 @@ public class MaintenanceController : ControllerBase
     private readonly IMaintenanceLogic _maintenanceLogic;
     private readonly Config _config;
     private readonly ProgressService _progressService;
+    private readonly ILogger<MaintenanceController> _logger;
 
-    public MaintenanceController(IMaintenanceLogic maintenanceLogic, Config config, ProgressService progressService)
+    public MaintenanceController(IMaintenanceLogic maintenanceLogic, Config config, ProgressService progressService, ILogger<MaintenanceController> logger)
     {
         _maintenanceLogic = maintenanceLogic;
         _config = config;
         _progressService = progressService;
+        _logger = logger;
     }
 
     private void ValidateKey(string category, string key)
@@ -47,7 +49,7 @@ public class MaintenanceController : ControllerBase
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            _logger.LogError(e,"Failed dot download for category '{Category}", category);
             if (sessionId != null) _progressService.Remove(sessionId);
             return new Video { Error = e.Message };
         }
