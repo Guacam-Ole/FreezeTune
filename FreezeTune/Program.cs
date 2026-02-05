@@ -4,10 +4,9 @@ using Microsoft.Extensions.Options;
 using FreezeTune.Logic;
 using FreezeTune.Repositories;
 using FreezeTune.Services;
-using Microsoft.AspNetCore.Mvc.Formatters;
+using Prometheus;
 using Serilog;
 using Serilog.Events;
-using Serilog.Formatting.Compact;
 using Serilog.Sinks.Grafana.Loki;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -42,6 +41,8 @@ builder.Services.AddScoped<IImageRepository, ImageRepository>();
 builder.Services.AddScoped<IVideoRepository, VideoRepository>();
 builder.Services.AddScoped<IMaintenanceLogic, MaintenanceLogic>();
 builder.Services.AddSingleton<ProgressService>();
+builder.Services.AddSingleton<MetricsService>();
+builder.Services.AddHostedService<MetricsBackgroundService>();
 
 Console.WriteLine($"Application started at {Environment.GetEnvironmentVariable("ASPNETCORE_URLS")}");
 var app = builder.Build();
@@ -65,7 +66,9 @@ app.UseStaticFiles(new StaticFileOptions
 });
 
 app.UseAuthorization();
+app.UseHttpMetrics();
 
 app.MapControllers();
+app.MapMetrics();
 
 app.Run();

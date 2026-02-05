@@ -24,6 +24,7 @@
         <PackageReference Include="YoutubeExplode" Version="6.5.6" />
         <PackageReference Include="YoutubeExplode.Converter" Version="6.5.6" />
         <PackageReference Include="HtmlAgilityPack" Version="1.11.72" />
+        <PackageReference Include="prometheus-net.AspNetCore" Version="8.2.1" />
     </ItemGroup>
 
     <ItemGroup>
