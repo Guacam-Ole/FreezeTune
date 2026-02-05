@@ -242,6 +242,7 @@ shareResultsBtn.addEventListener('click', shareResults);
 // Start a new game
 async function startNewGame() {
     currentGuessCount = 0;
+    lastGameResult = { guesses: 0, success: false };
     clearFeedback();
     clearInputs();
     hideSuccessScreen();
@@ -268,7 +269,8 @@ async function startNewGame() {
 
 // Handle category change
 function handleCategoryChange() {
-    startNewGame();
+    currentCategory = categorySelect.value;
+    initializeGame();
 }
 
 // Handle guess submission
@@ -654,18 +656,23 @@ function generateShareText() {
     return `FreezeTune Quiz ${date}\n\n${quizLines.join('\n')}\n\nScore: ${totalScore}\n\n#FreezeTune freezetune.com`;
 }
 
+// Check if device is mobile (where Web Share API makes sense)
+function isMobileDevice() {
+    return /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+           (navigator.maxTouchPoints > 0 && window.innerWidth < 768);
+}
+
 // Share results function
 async function shareResults() {
     const shareText = generateShareText();
+    const shareData = { text: shareText };
 
     try {
-        // Try to use Web Share API if available
-        if (navigator.share) {
-            await navigator.share({
-                text: shareText
-            });
+        // Only use Web Share API on mobile devices where it makes sense
+        if (isMobileDevice() && navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+            await navigator.share(shareData);
         } else {
-            // Fallback to clipboard
+            // On desktop, just copy to clipboard
             await navigator.clipboard.writeText(shareText);
 
             // Update button text temporarily
