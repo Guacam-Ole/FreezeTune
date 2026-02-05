@@ -242,6 +242,7 @@ shareResultsBtn.addEventListener('click', shareResults);
 // Start a new game
 async function startNewGame() {
     currentGuessCount = 0;
+    lastGameResult = { guesses: 0, success: false };
     clearFeedback();
     clearInputs();
     hideSuccessScreen();
@@ -268,7 +269,8 @@ async function startNewGame() {
 
 // Handle category change
 function handleCategoryChange() {
-    startNewGame();
+    currentCategory = categorySelect.value;
+    initializeGame();
 }
 
 // Handle guess submission
