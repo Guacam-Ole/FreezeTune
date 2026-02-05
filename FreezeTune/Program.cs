@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using FreezeTune.Logic;
 using FreezeTune.Repositories;
 using FreezeTune.Services;
+using Microsoft.AspNetCore.Mvc.Formatters;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Compact;
@@ -11,18 +12,8 @@ using Serilog.Sinks.Grafana.Loki;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Configuration.AddJsonFile("config.json", optional: false, reloadOnChange: true);
-builder.Services.Configure<Config>(builder.Configuration);
-builder.Services.AddSingleton<Config>(sp => sp.GetRequiredService<IOptions<Config>>().Value);
 
-builder.Services.AddControllers();
-builder.Services.AddOpenApi();
-builder.Services.AddScoped<IUserLogic, UserLogic>();
-builder.Services.AddScoped<IDatabaseRepository, DatabaseRepository>();
-builder.Services.AddScoped<IImageRepository, ImageRepository>();
-builder.Services.AddScoped<IVideoRepository, VideoRepository>();
-builder.Services.AddScoped<IMaintenanceLogic, MaintenanceLogic>();
-builder.Services.AddSingleton<ProgressService>();
+builder.Configuration.AddJsonFile("config.json", optional: false, reloadOnChange: true);
 builder.Services.AddLogging(cfg => cfg.SetMinimumLevel(LogLevel.Debug));
 builder.Services.AddSerilog(cfg =>
 {
@@ -38,13 +29,21 @@ builder.Services.AddSerilog(cfg =>
         .Enrich.WithProperty("inContainer", Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER"))
         .WriteTo.GrafanaLoki(Environment.GetEnvironmentVariable("LOKIURL") ?? "http://thebeast:3100",
             propertiesAsLabels: ["job"]);
-    if (Assembly.GetEntryAssembly()?.GetCustomAttribute<AssemblyConfigurationAttribute>()?.Configuration ==
-        "Debug")
-    {
-        cfg.WriteTo.Console(new RenderedCompactJsonFormatter());
-    }
+    cfg.WriteTo.Console(); //new  StringOutputFormatter() RenderedCompactJsonFormatter());
 });
+builder.Services.Configure<Config>(builder.Configuration);
+builder.Services.AddSingleton<Config>(sp => sp.GetRequiredService<IOptions<Config>>().Value);
 
+builder.Services.AddControllers();
+builder.Services.AddOpenApi();
+builder.Services.AddScoped<IUserLogic, UserLogic>();
+builder.Services.AddScoped<IDatabaseRepository, DatabaseRepository>();
+builder.Services.AddScoped<IImageRepository, ImageRepository>();
+builder.Services.AddScoped<IVideoRepository, VideoRepository>();
+builder.Services.AddScoped<IMaintenanceLogic, MaintenanceLogic>();
+builder.Services.AddSingleton<ProgressService>();
+
+Console.WriteLine($"Application started at {Environment.GetEnvironmentVariable("ASPNETCORE_URLS")}");
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
