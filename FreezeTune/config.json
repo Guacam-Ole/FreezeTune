@@ -2,5 +2,19 @@
   "BasePath": "/data",
   "Width": 640,
   "Height": 480,
-  "MaxDistance": 3
+  "MaxDistance": 0.1,
+  "Categories": [
+    {
+      "Name": "80s"
+    },
+    {
+      "Name": "90s"
+    },
+    {
+      "Name": "Weird Al",
+      "TitleCaption": "Weird Al's song title",
+      "ArtistCaption": "Parody of...",
+      "ShowHints": false
+    }
+  ]
 }

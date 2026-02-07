@@ -1,11 +1,9 @@
 using System.Text.RegularExpressions;
 using CliWrap;
-using ImageMagick;
 using CliWrap.Buffered;
 using FreezeTune.Models;
 using FreezeTune.Services;
 using HtmlAgilityPack;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Playwright;
 using Xabe.FFmpeg;
 using YoutubeExplode;
@@ -18,15 +16,17 @@ public class VideoRepository : IVideoRepository
 {
     private readonly Config _config;
     private readonly ProgressService _progressService;
+    private readonly ILogger<VideoRepository> _logger;
     private IPlaywright? _playwright;
     private IBrowser? _browser;
     private const int MaxParallelCaptures = 10; // TODO: Config
     private DateTime? _lastYtFailure = null;
 
-    public VideoRepository(Config config, ProgressService progressService)
+    public VideoRepository(Config config, ProgressService progressService, ILogger<VideoRepository> logger)
     {
         _config = config;
         _progressService = progressService;
+        _logger = logger;
     }
 
     private string GetImagePath(string subDir)
@@ -73,11 +73,11 @@ public class VideoRepository : IVideoRepository
 
     public string? MoveVideoFile(string category, Video video)
     {
-        
-        var sourceFile = Directory.GetFiles(GetVideoCategoryPath(category)).First();
+        var sourceFile = Directory.GetFiles(GetVideoCategoryPath(category)).FirstOrDefault();
+        if (sourceFile==null) return null; // Sourcefile does not exist
         var targetFile = GetVideoPathFor(category, video);
         if (File.Exists(targetFile)) return targetFile; // Targetfile already exist
-        if (!File.Exists(sourceFile)) return null; // Sourcefile does not exist
+        
         File.Move(sourceFile, targetFile);
         return targetFile;
     }
@@ -143,15 +143,14 @@ public class VideoRepository : IVideoRepository
                     _lastYtFailure = null;
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                Console.WriteLine(e.Message);
                 _lastYtFailure = DateTime.Now;
             }
 
             if (_lastYtFailure != null)
             {
-                Console.WriteLine("Grabbing images because of yt error");
+                _logger.LogDebug("Grabbing images because of yt error");
                 (author, title) =
                     await DownloadImagesFromVideo(url, date, category, numberOfFrames, p => ReportProgress(p / 2, "Frame Capture"));
             }
@@ -196,7 +195,6 @@ public class VideoRepository : IVideoRepository
     private async Task<(string, string)> DownloadVideoFromYoutube(string category, string youtubeUrl, DateOnly date,
         Action<int>? onProgress = null)
     {
-        Console.WriteLine("Try YT download");
         try
         {
             using var youtube = new YoutubeClient();
@@ -231,11 +229,12 @@ public class VideoRepository : IVideoRepository
                     videoContents.Title)).Build(),
                 progress
             );
+            _logger.LogInformation("Downloaded '{Artist}' - '{Title}' as Video from YouTube",videoContents.Author.ChannelTitle, videoContents.Title);
             return (videoContents.Author.ChannelTitle, videoContents.Title);
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            _logger.LogError(e, "Failed downloading '{Url}' from Youtube",youtubeUrl);
             throw;
         }
     }
@@ -248,7 +247,6 @@ public class VideoRepository : IVideoRepository
 
         try
         {
-            Console.WriteLine("Try download from tidal");
             await Cli.Wrap(shellCommand)
                 .WithArguments([
                     shellConfig, "download_base_path",
@@ -312,14 +310,18 @@ public class VideoRepository : IVideoRepository
 
             var downloadedFiles = Directory.GetFiles(GetVideoCategoryPath(category), $"{date:yyyy-MM-dd}*.mp4");
             var match = downloadedFiles.OrderByDescending(q => q).First();
-            var rightpart = match.Substring(match.IndexOf("|||", StringComparison.CurrentCulture) + 3);
-            var parts = rightpart.Split("||");
+            var rightPart = match[(match.IndexOf("|||", StringComparison.CurrentCulture) + 3)..];
+            var parts = rightPart.Split("||");
 
-            return (parts[0], parts[1][..parts[1].LastIndexOf('.')]);
+            var artist = parts[0];
+            var title = parts[1][..parts[1].LastIndexOf('.')];
+            
+            _logger.LogInformation("Downloaded '{Artist}' - '{Title}' from Tidal", artist,title);
+            return (artist,title);
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            _logger.LogError(e, "Failed downloading '{Url}' from Tidal",tidalUrl);
             throw;
         }
     }
@@ -343,7 +345,7 @@ public class VideoRepository : IVideoRepository
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            _logger.LogError(e,"Failed extracting frames for Category '{Category}'",category);
             throw;
         }
     }
@@ -361,13 +363,7 @@ public class VideoRepository : IVideoRepository
 
     private async Task<(int, string, string)> GetVideoMetadata(string url)
     {
-        var context = await _browser!.NewContextAsync(new()
-        {
-            UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            ViewportSize = new() { Width = 1280, Height = 720 },
-            Locale = "en-US"
-        });
-
+        var context = await GetBrowserContext();
         var page = await context.NewPageAsync();
 
         await page.GotoAsync(url);
@@ -379,16 +375,13 @@ public class VideoRepository : IVideoRepository
         var doc = new HtmlDocument();
         doc.LoadHtml(html);
 
-        // Extract title from Schema.org meta tag
         var title = doc.DocumentNode.SelectSingleNode("//meta[@itemprop='name']")?.GetAttributeValue("content", "")
                     ?? doc.DocumentNode.SelectSingleNode("//meta[@property='og:title']")?.GetAttributeValue("content", "")
-                    ?? "";
+                    ?? string.Empty;
 
-        // Extract channel from Schema.org author span
         var channel = doc.DocumentNode.SelectSingleNode("//span[@itemprop='author']//link[@itemprop='name']")?.GetAttributeValue("content", "")
-                      ?? "";
+                      ?? string.Empty;
 
-        // Extract duration from Schema.org (ISO 8601 format: PT3M34S)
         var duration = 0;
         var isoDuration = doc.DocumentNode.SelectSingleNode("//meta[@itemprop='duration']")?.GetAttributeValue("content", "");
         if (!string.IsNullOrEmpty(isoDuration))
@@ -403,7 +396,7 @@ public class VideoRepository : IVideoRepository
             }
         }
 
-        if (title != null && channel != null && title.StartsWith(channel)) title = title[channel.Length..];
+        if (title.StartsWith(channel)) title = title[channel.Length..];
         return (duration, title, channel);
     }
 
@@ -445,12 +438,12 @@ public class VideoRepository : IVideoRepository
         try
         {
             var data = await CaptureFrame(url, seconds);
-            Console.WriteLine($"received frame at {seconds}");
+            _logger.LogDebug("received frame at {seconds}", seconds);
             return (seconds, data);
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex);
+            _logger.LogError(ex, "Failed capturing frames from '{Url}'", url);
             throw;
         }
         finally
@@ -459,19 +452,22 @@ public class VideoRepository : IVideoRepository
         }
     }
 
-    private async Task<byte[]> CaptureFrame(string url, int seconds)
+    private async Task<IBrowserContext> GetBrowserContext()
     {
-        var context = await _browser!.NewContextAsync(new BrowserNewContextOptions
+        return await _browser!.NewContextAsync(new BrowserNewContextOptions
         {
             UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             ViewportSize = new ViewportSize { Width = 720, Height = 480 },
             Locale = "en-US"
-        });
-
+        });   
+    }
+    
+    
+    private async Task<byte[]> CaptureFrame(string url, int seconds)
+    {
+        var context = await GetBrowserContext();
         var page = await context.NewPageAsync();
-
         await page.GotoAsync($"{url}&t={seconds}s&cc_load_policy=0");
-
         await page.WaitForSelectorAsync("video", new PageWaitForSelectorOptions { Timeout = 10000 });
 
         try
@@ -487,12 +483,12 @@ public class VideoRepository : IVideoRepository
             }
             else
             {
-                Console.WriteLine("no cookie warning received");
+                _logger.LogWarning("no cookie warning received");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            _logger.LogError(ex, "Failed capturing single Frame at '{Seconds}' seconds for '{Url}'",seconds, url);
         }
 
         await page.WaitForFunctionAsync(
@@ -543,7 +539,6 @@ public class VideoRepository : IVideoRepository
         var screenshot = await video!.ScreenshotAsync(new ElementHandleScreenshotOptions
         {
             Type = ScreenshotType.Png,
-            //Quality = 75
         });
 
         await context.CloseAsync();
@@ -568,19 +563,19 @@ public class VideoRepository : IVideoRepository
         var (duration, title, channel) = await GetVideoMetadata(url);
 
         var timestamps = GenerateTimestamps(duration, frameCount);
-        Console.WriteLine($"Timestamps: {string.Join(", ", timestamps)}");
+        
+        
 
         var frames = await CaptureFrames(url, timestamps, onProgress);
         var counter = 0;
         foreach (var (timestamp, data) in frames)
         {
             var filename = GetImagePathFor(date, category, "tmp", counter++);
-            Console.WriteLine($"Capturing Frame {counter}/{frameCount} bei {timestamp}s...");
-
             await File.WriteAllBytesAsync(filename, data);
         }
 
         await Cleanup();
+        _logger.LogInformation("Retrieved Images from '{Url}' at the following timestamps: '{Timestamps}'", url, string.Join(",", timestamps));
         return (channel, title);
     }
 }
