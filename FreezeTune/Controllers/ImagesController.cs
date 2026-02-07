@@ -36,6 +36,7 @@ public class ImagesController : Controller
     [HttpPost]
     public Result Guess(string category, [FromBody] Guess guess)
     {
+        var categoryConfig = _config.Categories.First(q => q.Name == category);
         var todaysRiddle = _databaseRepository.GetForToday(category);
         var guessResult = _userLogic.TakeAGuess(category, guess);
         var result = new Result
@@ -46,7 +47,7 @@ public class ImagesController : Controller
             Match = guessResult.Match
         };
 
-        if (guess.GuessCount >= 6 || result.InterpretCorrect)
+        if (guess.GuessCount >= 6 && categoryConfig.ShowHints || result.InterpretCorrect)
         {
             // Hint interpret
             result.Interpret = guessResult.Interpret;
