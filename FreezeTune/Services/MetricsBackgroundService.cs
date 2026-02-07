@@ -45,9 +45,9 @@ public class MetricsBackgroundService : BackgroundService
 
         foreach (var category in _config.Categories)
         {
-            var count = dbRepo.CountForCategory(category);
-            var availableUntil = dbRepo.AvailableUntil(category);
-            _metrics.UpdateCategoryStats(category, count, availableUntil);
+            var count = dbRepo.CountForCategory(category.Name);
+            var availableUntil = dbRepo.AvailableUntil(category.Name);
+            _metrics.UpdateCategoryStats(category.Name, count, availableUntil);
         }
     }
 }
