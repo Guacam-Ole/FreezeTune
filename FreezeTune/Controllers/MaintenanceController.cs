@@ -13,7 +13,8 @@ public class MaintenanceController : ControllerBase
     private readonly ProgressService _progressService;
     private readonly ILogger<MaintenanceController> _logger;
 
-    public MaintenanceController(IMaintenanceLogic maintenanceLogic, Config config, ProgressService progressService, ILogger<MaintenanceController> logger)
+    public MaintenanceController(IMaintenanceLogic maintenanceLogic, Config config, ProgressService progressService,
+        ILogger<MaintenanceController> logger)
     {
         _maintenanceLogic = maintenanceLogic;
         _config = config;
@@ -23,17 +24,18 @@ public class MaintenanceController : ControllerBase
 
     private void ValidateKey(string category, string key)
     {
-        if (!_config.Categories.Contains(category)) throw new Exception("Wrong Catgory");
+        var categoryConfig = _config.Categories.FirstOrDefault(q => q.Name == category);
+        if (categoryConfig == null) throw new Exception("Wrong Catgory");
         var masterKey = Environment.GetEnvironmentVariable("FREEZEAPIKEY");
         if (key == masterKey) return;
-        if (_config.CategoryKeys==null || !_config.CategoryKeys.TryGetValue(category, out var value)) throw new Exception("Wrong key");
-        if (value != key) throw new Exception("Wrong Key"); 
+
+        if (categoryConfig.Password == null || categoryConfig.Password != key) throw new Exception("Wrong key");
     }
 
     [HttpGet("Date")]
     public Video GetDate(string category)
     {
-         return _maintenanceLogic.Init(category);
+        return _maintenanceLogic.Init(category);
     }
 
     [HttpPost("Download")]
@@ -49,7 +51,7 @@ public class MaintenanceController : ControllerBase
         }
         catch (Exception e)
         {
-            _logger.LogError(e,"Failed dot download for category '{Category}", category);
+            _logger.LogError(e, "Failed dot download for category '{Category}", category);
             if (sessionId != null) _progressService.Remove(sessionId);
             return new Video { Error = e.Message };
         }
@@ -64,19 +66,18 @@ public class MaintenanceController : ControllerBase
     }
 
     [HttpPost("Temp")]
-    public Dictionary<int,string> GetTempImages(string apiKey, string category, [FromBody] Video video)
+    public Dictionary<int, string> GetTempImages(string apiKey, string category, [FromBody] Video video)
     {
         ValidateKey(category, apiKey);
 
         return _maintenanceLogic.GetTmpImages(category, video);
     }
-    
+
     [HttpPost("Store")]
     public bool Store(string apiKey, string category, [FromBody] Video video)
     {
-        
         ValidateKey(category, apiKey);
-        _maintenanceLogic.Add(category, video) ;
+        _maintenanceLogic.Add(category, video);
         return true;
     }
 }

@@ -22,8 +22,16 @@ public class ImagesController : Controller
     [HttpGet("Categories")]
     public Dictionary<string,int> GetCategories()
     {
-        return _config.Categories.ToDictionary(category => category, category => _databaseRepository.CountForCategory(category));
+        return _config.Categories.ToDictionary(q => q.Name, q => _databaseRepository.CountForCategory(q.Name));
     }
+
+    [HttpGet("Captions")]
+    public KeyValuePair<string?,string?> GetCategoryCaptions(string category)
+    {
+        var categoryConfig = _config.Categories.FirstOrDefault(q => q.Name == category);
+        return new KeyValuePair<string?, string?>(categoryConfig?.TitleCaption, categoryConfig?.ArtistCaption);
+    }
+    
 
     [HttpPost]
     public Result Guess(string category, [FromBody] Guess guess)

@@ -99,6 +99,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         currentCategory = categorySelect.value;
     }
     await loadCategories();
+    await loadCaptions();
     initializeGame();
 });
 
@@ -112,6 +113,20 @@ async function loadCategories() {
         }
     } catch (e) {
         console.error('Error loading categories:', e);
+    }
+}
+
+// Load captions for the current category and update labels
+async function loadCaptions() {
+    try {
+        const response = await fetch(`/Image/Captions?category=${encodeURIComponent(currentCategory)}`);
+        if (response.ok) {
+            const captions = await response.json();
+            document.querySelector('label[for="interpret"]').textContent = captions.value || 'Artist';
+            document.querySelector('label[for="title"]').textContent = captions.key || 'Song Title';
+        }
+    } catch (e) {
+        console.error('Error loading captions:', e);
     }
 }
 

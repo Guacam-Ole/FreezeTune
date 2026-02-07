@@ -9,6 +9,5 @@ public class Config
     public uint Height { get; set; } = 1080;
     public double MaxDistance { get; set; } = 3;
 
-    public List<string> Categories { get; set; } = ["80s", "90s", "Hamburg"];
-    public Dictionary<string, string>? CategoryKeys { get; set; } = null;
+    public List<Category> Categories { get; set; } = [];
 }

@@ -21,7 +21,10 @@ let progressInterval = null;
 window.addEventListener('DOMContentLoaded', loadCategories);
 downloadBtn.addEventListener('click', handleDownload);
 addVideoBtn.addEventListener('click', handleAddVideo);
-categorySelect.addEventListener('change', loadDate);
+categorySelect.addEventListener('change', () => {
+    loadDate();
+    loadCaptions();
+});
 
 async function loadCategories() {
     try {
@@ -42,6 +45,7 @@ async function loadCategories() {
 
         if (categoryNames.length > 0) {
             loadDate();
+            loadCaptions();
         }
     } catch (error) {
         showError('Failed to load categories: ' + error.message);
@@ -51,6 +55,19 @@ async function loadCategories() {
 
 function getSelectedCategory() {
     return categorySelect.value;
+}
+
+async function loadCaptions() {
+    try {
+        const response = await fetch(`/Image/Captions?category=${encodeURIComponent(getSelectedCategory())}`);
+        if (response.ok) {
+            const captions = await response.json();
+            document.querySelector('label[for="interpret"]').textContent = captions.value || 'Interpret';
+            document.querySelector('label[for="title"]').textContent = captions.key || 'Title';
+        }
+    } catch (e) {
+        console.error('Error loading captions:', e);
+    }
 }
 
 async function loadDate() {
