@@ -33,7 +33,9 @@ public class UserLogic : IUserLogic
         var cleanedGuess = Regex.Replace(guess.ToLower(), @"[^a-zA-Z0-9\s]", "");
 
         var jaro = new JaroWinkler();
-        return jaro.Distance(cleanedOriginal, cleanedGuess);
+        var distance=jaro.Distance(cleanedOriginal, cleanedGuess);
+        Console.WriteLine($"Dostance: {distance}");
+        return distance;
     }
 
     public bool ValuesAreCorrect(string category, string interpret, string title)
@@ -41,6 +43,7 @@ public class UserLogic : IUserLogic
         var todaysRiddle = _databaseRepository.GetForToday(category);
         if (todaysRiddle == null) throw new Exception("Data is missing");
 
+        Console.WriteLine($"Maxdistance: {_maxDistance}");
         var artistDistance = GetDistance(todaysRiddle.Interpret, interpret);
         var titleDistance  = GetDistance(todaysRiddle.Title, title);
         return artistDistance <= _maxDistance && titleDistance <= _maxDistance;
