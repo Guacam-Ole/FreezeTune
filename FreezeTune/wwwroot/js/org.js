@@ -255,7 +255,7 @@ async function handleAddVideo() {
 
         const result = await response.json();
         if (result) {
-            showError('Video added successfully!');
+            showError('Video added successfully!', true);
             // Reload the date to get the next available date
             await loadDate();
         }
@@ -331,10 +331,12 @@ function parseDate(dateString) {
     return dateString;
 }
 
-function showError(message) {
+function showError(message, isSuccess = false) {
     errorMessage.textContent = message;
+    errorMessage.style.background = isSuccess ? 'var(--success-color)' : '';
     errorMessage.classList.remove('hidden');
     setTimeout(() => {
         errorMessage.classList.add('hidden');
+        errorMessage.style.background = '';
     }, 5000);
 }

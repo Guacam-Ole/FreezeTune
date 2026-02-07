@@ -10,6 +10,10 @@ RUN dotnet restore
 # Build and publish a release
 RUN dotnet publish -f net9.0 -c Release -o out -p:StaticWebAssetsEnabled=false
 
+# Install Playwright browsers in the SDK stage
+RUN dotnet tool install --global Microsoft.Playwright.CLI \
+    && /root/.dotnet/tools/playwright install chromium
+
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
 WORKDIR /App
@@ -35,9 +39,8 @@ RUN apt-get update && apt-get install -y \
     libgbm1 libasound2 libpango-1.0-0 libcairo2 libatspi2.0-0 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install Playwright browsers using the .NET tool
-RUN dotnet tool install --global Microsoft.Playwright.CLI \
-    && /root/.dotnet/tools/playwright install chromium
+# Copy Playwright browsers from build stage
+COPY --from=build-env /root/.cache/ms-playwright /root/.cache/ms-playwright
 
 # Install tidal-dl-ng from local fork
 COPY tidal-dl-ng-For-DJ-master.zip /tmp/
