@@ -19,7 +19,7 @@ public class VideoRepository : IVideoRepository
     private readonly ILogger<VideoRepository> _logger;
     private IPlaywright? _playwright;
     private IBrowser? _browser;
-    private const int MaxParallelCaptures = 10; // TODO: Config
+    private const int MaxParallelCaptures = 4; // TODO: Config
     private DateTime? _lastYtFailure = null;
 
     public VideoRepository(Config config, ProgressService progressService, ILogger<VideoRepository> logger)
