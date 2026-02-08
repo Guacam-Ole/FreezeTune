@@ -222,7 +222,14 @@ public class VideoRepository : IVideoRepository
             if (videoContents.Duration.HasValue && videoContents.Duration.Value.TotalMinutes > 30)
                 throw new Exception("Too long");
 
-            var progress = new Progress<double>(p => onProgress?.Invoke((int)(p * 100)));
+            var lastReported = -1;
+            var progress = new Progress<double>(p =>
+            {
+                var percent = (int)(p * 100);
+                if (percent == lastReported) return;
+                lastReported = percent;
+                onProgress?.Invoke(percent);
+            });
             await youtube.Videos.DownloadAsync(
                 [audioStreamInfo, videoStreamInfo],
                 new ConversionRequestBuilder(GetTempVideoPathFor(category, date, videoContents.Author.ChannelTitle,

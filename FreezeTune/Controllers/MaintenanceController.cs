@@ -51,7 +51,7 @@ public class MaintenanceController : ControllerBase
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Failed dot download for category '{Category}", category);
+            _logger.LogError(e, "Failed to download for category '{Category}", category);
             if (sessionId != null) _progressService.Remove(sessionId);
             return new Video { Error = e.Message };
         }
