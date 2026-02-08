@@ -48,7 +48,8 @@ Configuration is done via config.json
   "BasePath": "/data",
   "Width": 640,
   "Height": 480,
-  "MaxDistance": 3,
+  "MaxDistance": 0.2,
+  "Categories":["80s","90s","Hamburg"],
   "CategoryKeys": [
     {
       "Key":"80s", 
