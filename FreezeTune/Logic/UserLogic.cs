@@ -34,7 +34,6 @@ public class UserLogic : IUserLogic
 
         var jaro = new JaroWinkler();
         var distance=jaro.Distance(cleanedOriginal, cleanedGuess);
-        Console.WriteLine($"Dostance: {distance}");
         return distance;
     }
 
