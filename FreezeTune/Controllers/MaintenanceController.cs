@@ -38,6 +38,22 @@ public class MaintenanceController : ControllerBase
         return _maintenanceLogic.Init(category);
     }
 
+    [HttpGet("CheckUrl")]
+    public ActionResult<string?> CheckUrl(string category, string url)
+    {
+        var date = _maintenanceLogic.CheckUrl(category, url);
+        if (date == null) return Ok(null);
+        return Ok(date.Value.ToString("dd.MM.yyyy"));
+    }
+
+    [HttpGet("CheckArtistTitle")]
+    public ActionResult<string?> CheckArtistTitle(string category, string interpret, string title)
+    {
+        var date = _maintenanceLogic.CheckArtistTitle(category, interpret, title);
+        if (date == null) return Ok(null);
+        return Ok(date.Value.ToString("dd.MM.yyyy"));
+    }
+
     [HttpPost("Download")]
     public async Task<Video> Download(string apiKey, string category, string? sessionId, [FromBody] Video video)
     {
