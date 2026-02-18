@@ -13,7 +13,7 @@ async function loadCategories() {
         }
 
         const categories = await response.json();
-        const categoryNames = Object.keys(categories);
+        const categoryNames = categories.map(cat => cat.name);
 
         categorySelect.innerHTML = '';
         categoryNames.forEach(category => {

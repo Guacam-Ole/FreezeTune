@@ -12,6 +12,7 @@ public class UserLogic : IUserLogic
     private readonly IDatabaseRepository _databaseRepository;
     private readonly IImageRepository _imageRepositor;
     private readonly MetricsService _metrics;
+    private readonly Config _config;
 
     public UserLogic(IDatabaseRepository databaseRepository, IImageRepository imageRepositor,
         IVideoRepository videoRepository, Config config, MetricsService metrics)
@@ -20,6 +21,7 @@ public class UserLogic : IUserLogic
         _imageRepositor = imageRepositor;
         _metrics = metrics;
         _maxDistance = config.MaxDistance;
+        _config = config;
     }
 
     public string GetImage(string category, DateOnly date, int currentNumber)
@@ -43,8 +45,10 @@ public class UserLogic : IUserLogic
         if (todaysRiddle == null) throw new Exception("Data is missing");
 
         Console.WriteLine($"Maxdistance: {_maxDistance}");
+        var hasArtist = _config.Categories.FirstOrDefault(q => q.Name == category)?.HasArtist ?? true;
+        var titleDistance = GetDistance(todaysRiddle.Title, title);
+        if (!hasArtist) return titleDistance <= _maxDistance;
         var artistDistance = GetDistance(todaysRiddle.Interpret, interpret);
-        var titleDistance  = GetDistance(todaysRiddle.Title, title);
         return artistDistance <= _maxDistance && titleDistance <= _maxDistance;
     }
     
@@ -53,13 +57,14 @@ public class UserLogic : IUserLogic
         var todaysRiddle = _databaseRepository.GetForToday(category);
         if (todaysRiddle == null) throw new Exception("Data is missing");
 
-        var artistDistance = GetDistance(todaysRiddle.Interpret, guess.Interpret);
+        var hasArtist = _config.Categories.FirstOrDefault(q => q.Name == category)?.HasArtist ?? true;
+        var artistDistance = hasArtist ? GetDistance(todaysRiddle.Interpret, guess.Interpret) : 0;
         var titleDistance = GetDistance(todaysRiddle.Title, guess.Title);
 
         var result = new CalculationResult
         {
-            InterpretMatch = artistDistance <= _maxDistance,
-            TitleMatch = titleDistance<= _maxDistance
+            InterpretMatch = !hasArtist || artistDistance <= _maxDistance,
+            TitleMatch = titleDistance <= _maxDistance
         };
 
         _metrics.RecordGuess(category);

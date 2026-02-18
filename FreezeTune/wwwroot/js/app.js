@@ -3,6 +3,7 @@ let currentGuessCount = 0;
 let maxGuesses = 8;
 let currentCategory = new URLSearchParams(window.location.search).get('category') || '80s';
 let availableCategories = [];
+let categoryHasArtist = true;
 
 // LocalStorage key for game state (category-specific)
 function getStorageKey() {
@@ -109,7 +110,14 @@ async function loadCategories() {
         const response = await fetch('/Image/Categories');
         if (response.ok) {
             const categories = await response.json();
-            availableCategories = Object.keys(categories).filter(cat => categories[cat] > 0);
+            const withQuizzes = categories.filter(cat => cat.count > 0);
+            // Build ordered list: no-header first, then each header group in config order
+            const noHeader = withQuizzes.filter(cat => !cat.header);
+            const headers = [...new Set(withQuizzes.filter(cat => cat.header).map(cat => cat.header))];
+            availableCategories = [
+                ...noHeader.map(cat => cat.name),
+                ...headers.flatMap(h => withQuizzes.filter(cat => cat.header === h).map(cat => cat.name))
+            ];
         }
     } catch (e) {
         console.error('Error loading categories:', e);
@@ -122,8 +130,10 @@ async function loadCaptions() {
         const response = await fetch(`/Image/Captions?category=${encodeURIComponent(currentCategory)}`);
         if (response.ok) {
             const captions = await response.json();
-            document.querySelector('label[for="interpret"]').textContent = captions.value || 'Artist';
-            document.querySelector('label[for="title"]').textContent = captions.key || 'Song Title';
+            categoryHasArtist = captions.hasArtist !== false;
+            document.querySelector('label[for="interpret"]').textContent = captions.artistCaption || 'Artist';
+            document.querySelector('label[for="title"]').textContent = captions.titleCaption || 'Song Title';
+            interpretInput.closest('.input-group').style.display = categoryHasArtist ? '' : 'none';
         }
     } catch (e) {
         console.error('Error loading captions:', e);
@@ -360,12 +370,14 @@ function handleGuessResult(result) {
     submitBtn.disabled = false;
     submitBtn.textContent = 'Submit Guess';
 
-    // Display interpret hint if provided
-    const interpretHint = result.interpret;
-    if (interpretHint) {
-        interpretInput.value = interpretHint;
-    } else if (!result.interpretCorrect) {
-        interpretInput.value = '';
+    // Display interpret hint if provided (only when category uses artist)
+    if (categoryHasArtist) {
+        const interpretHint = result.interpret;
+        if (interpretHint) {
+            interpretInput.value = interpretHint;
+        } else if (!result.interpretCorrect) {
+            interpretInput.value = '';
+        }
     }
 
     // Clear title if incorrect
@@ -374,7 +386,7 @@ function handleGuessResult(result) {
     }
 
     // Focus on the first incorrect field
-    if (!result.interpretCorrect) {
+    if (categoryHasArtist && !result.interpretCorrect) {
         interpretInput.focus();
     } else if (!result.titleCorrect) {
         titleInput.focus();
@@ -386,15 +398,17 @@ function showFeedback(interpretCorrect, titleCorrect) {
     // Clear previous feedback
     clearFeedback();
 
-    // Interpret feedback
-    if (interpretCorrect) {
-        interpretInput.classList.add('correct');
-        interpretFeedback.textContent = '✓';
-        interpretFeedback.classList.add('show');
-    } else {
-        interpretInput.classList.add('incorrect');
-        interpretFeedback.textContent = '✗';
-        interpretFeedback.classList.add('show');
+    // Interpret feedback (only when category uses artist)
+    if (categoryHasArtist) {
+        if (interpretCorrect) {
+            interpretInput.classList.add('correct');
+            interpretFeedback.textContent = '✓';
+            interpretFeedback.classList.add('show');
+        } else {
+            interpretInput.classList.add('incorrect');
+            interpretFeedback.textContent = '✗';
+            interpretFeedback.classList.add('show');
+        }
     }
 
     // Title feedback
@@ -489,6 +503,7 @@ function showSuccess(match, guesses, wasCorrectGuess = null, allPictures = null)
     }
 
     successInterpret.textContent = match.interpret;
+    successInterpret.style.display = categoryHasArtist ? '' : 'none';
     successTitle.textContent = match.title;
 
     // Check if local video file exists (handle both camelCase and PascalCase)

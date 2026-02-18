@@ -20,16 +20,26 @@ public class ImagesController : Controller
     }
 
     [HttpGet("Categories")]
-    public Dictionary<string,int> GetCategories()
+    public IEnumerable<object> GetCategories()
     {
-        return _config.Categories.ToDictionary(q => q.Name, q => _databaseRepository.CountForCategory(q.Name));
+        return _config.Categories.Select(q => new
+        {
+            name = q.Name,
+            count = _databaseRepository.CountForCategory(q.Name),
+            header = q.Header
+        });
     }
 
     [HttpGet("Captions")]
-    public KeyValuePair<string?,string?> GetCategoryCaptions(string category)
+    public object GetCategoryCaptions(string category)
     {
         var categoryConfig = _config.Categories.FirstOrDefault(q => q.Name == category);
-        return new KeyValuePair<string?, string?>(categoryConfig?.TitleCaption, categoryConfig?.ArtistCaption);
+        return new
+        {
+            titleCaption = categoryConfig?.TitleCaption,
+            artistCaption = categoryConfig?.ArtistCaption,
+            hasArtist = categoryConfig?.HasArtist ?? true
+        };
     }
     
 

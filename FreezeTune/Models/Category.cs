@@ -7,4 +7,6 @@ public class Category
     public string? ArtistCaption { get; set; }
     public string? TitleCaption { get; set; }
     public bool ShowHints { get; set; } = true;
+    public bool HasArtist { get; set; } = true;
+    public string? Header { get; set; }
 }
