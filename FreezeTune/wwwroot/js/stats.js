@@ -38,7 +38,7 @@ async function loadStats(category) {
     statsChart.innerHTML = '';
 
     try {
-        const response = await fetch(`/Stats?category=${category}`);
+        const response = await fetch(`/Stats?category=${encodeURIComponent(category)}`);
         if (!response.ok) {
             throw new Error('Failed to load statistics');
         }
