@@ -130,6 +130,35 @@ async function loadCaptions() {
     }
 }
 
+// Update skip navigation buttons shown above the image on the first guess
+function updateSkipNavigation() {
+    const skipNav = document.getElementById('skip-navigation');
+    if (!skipNav) return;
+
+    // Only show on the first image (before any guess has been made)
+    if (currentGuessCount !== 0) {
+        skipNav.classList.add('hidden');
+        skipNav.innerHTML = '';
+        return;
+    }
+
+    const otherCategories = availableCategories.filter(cat => cat !== currentCategory);
+    if (otherCategories.length === 0) {
+        skipNav.classList.add('hidden');
+        skipNav.innerHTML = '';
+        return;
+    }
+
+    skipNav.innerHTML = otherCategories.map(cat =>
+        `<a href="game.html?category=${encodeURIComponent(cat)}" class="skip-btn">Skip to ${escapeHtml(cat)}</a>`
+    ).join('');
+    skipNav.classList.remove('hidden');
+}
+
+function escapeHtml(str) {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 // Update quiz navigation buttons based on current category position
 function updateQuizNavigation() {
     const prevBtn = document.getElementById('prev-quiz-btn');
@@ -236,6 +265,7 @@ async function resumeGame(guessCount) {
         if (result.nextPictureContents) {
             loadImage(result.nextPictureContents);
             updateProgress(result.nextPicture);
+            updateSkipNavigation();
         }
     } catch (error) {
         showError('Failed to resume game. Starting fresh.');
@@ -276,6 +306,7 @@ async function startNewGame() {
         const result = await response.json();
         loadImage(result.nextPictureContents);
         updateProgress(1);
+        updateSkipNavigation();
     } catch (error) {
         showError('Failed to load game. Please try again.');
         console.error('Error starting game:', error);
@@ -335,6 +366,7 @@ async function handleGuessSubmit(event) {
 // Handle the result of a guess
 function handleGuessResult(result) {
     currentGuessCount = result.guesses;
+    updateSkipNavigation();
 
     // Check if the user got it right (or ran out of guesses)
     if (result.match) {

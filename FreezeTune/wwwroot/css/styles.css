@@ -101,6 +101,35 @@ header h1 {
     font-weight: 600;
 }
 
+/* Skip Navigation */
+.skip-navigation {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+    justify-content: center;
+}
+
+.skip-btn {
+    padding: 7px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: var(--surface-light);
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-radius: 20px;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+
+.skip-btn:hover {
+    background: var(--primary-color);
+    color: var(--text-primary);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+}
+
 /* Image Container */
 .image-container {
     position: relative;
