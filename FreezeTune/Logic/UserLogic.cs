@@ -12,6 +12,7 @@ public class UserLogic : IUserLogic
     private readonly IDatabaseRepository _databaseRepository;
     private readonly IImageRepository _imageRepositor;
     private readonly MetricsService _metrics;
+    private readonly Config _config;
 
     public UserLogic(IDatabaseRepository databaseRepository, IImageRepository imageRepositor,
         IVideoRepository videoRepository, Config config, MetricsService metrics)
@@ -20,6 +21,7 @@ public class UserLogic : IUserLogic
         _imageRepositor = imageRepositor;
         _metrics = metrics;
         _maxDistance = config.MaxDistance;
+        _config = config;
     }
 
     public string GetImage(string category, DateOnly date, int currentNumber)
@@ -43,22 +45,24 @@ public class UserLogic : IUserLogic
         if (todaysRiddle == null) throw new Exception("Data is missing");
 
         Console.WriteLine($"Maxdistance: {_maxDistance}");
-        var artistDistance = GetDistance(todaysRiddle.Interpret, interpret);
-        var titleDistance  = GetDistance(todaysRiddle.Title, title);
-        return artistDistance <= _maxDistance && titleDistance <= _maxDistance;
+        var noArtist = _config.Categories.FirstOrDefault(q => q.Name == category)?.NoArtist ?? false;
+        var artistOk = noArtist || GetDistance(todaysRiddle.Interpret, interpret) <= _maxDistance;
+        var titleOk  = GetDistance(todaysRiddle.Title, title) <= _maxDistance;
+        return artistOk && titleOk;
     }
-    
+
     public CalculationResult TakeAGuess(string category, Guess guess)
     {
         var todaysRiddle = _databaseRepository.GetForToday(category);
         if (todaysRiddle == null) throw new Exception("Data is missing");
 
-        var artistDistance = GetDistance(todaysRiddle.Interpret, guess.Interpret);
+        var noArtist = _config.Categories.FirstOrDefault(q => q.Name == category)?.NoArtist ?? false;
+        var artistDistance = noArtist ? 0 : GetDistance(todaysRiddle.Interpret, guess.Interpret);
         var titleDistance = GetDistance(todaysRiddle.Title, guess.Title);
 
         var result = new CalculationResult
         {
-            InterpretMatch = artistDistance <= _maxDistance,
+            InterpretMatch = noArtist || artistDistance <= _maxDistance,
             TitleMatch = titleDistance<= _maxDistance
         };
 
