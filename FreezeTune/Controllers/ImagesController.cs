@@ -30,15 +30,16 @@ public class ImagesController : Controller
         });
     }
 
+    
     [HttpGet("Captions")]
-    public object GetCategoryCaptions(string category)
+    public CategoryCaptions GetCategoryCaptions(string category)
     {
         var categoryConfig = _config.Categories.FirstOrDefault(q => q.Name == category);
-        return new
+        return new CategoryCaptions
         {
-            titleCaption = categoryConfig?.TitleCaption,
-            artistCaption = categoryConfig?.ArtistCaption,
-            hasArtist = categoryConfig?.HasArtist ?? true
+            TitleCaption = categoryConfig?.TitleCaption,
+            ArtistCaption = categoryConfig?.ArtistCaption,
+            HasArtist = categoryConfig?.HasArtist ?? true
         };
     }
     

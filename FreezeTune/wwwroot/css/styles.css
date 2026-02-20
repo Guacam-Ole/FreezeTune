@@ -254,6 +254,25 @@ header h1 {
     cursor: not-allowed;
 }
 
+/* Skip Category Button */
+.skip-category-btn {
+    display: block;
+    text-align: center;
+    margin-top: 12px;
+    padding: 10px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.skip-category-btn:hover {
+    color: var(--text-primary);
+    background: var(--surface-light);
+}
+
 /* Category Selector */
 .category-selector {
     display: flex;

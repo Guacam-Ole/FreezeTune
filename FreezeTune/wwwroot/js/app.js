@@ -101,6 +101,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
     await loadCategories();
     await loadCaptions();
+    updateSkipButton();
     initializeGame();
 });
 
@@ -137,6 +138,25 @@ async function loadCaptions() {
         }
     } catch (e) {
         console.error('Error loading captions:', e);
+    }
+}
+
+// Show/hide skip button on game screen based on whether there's a next category
+function updateSkipButton() {
+    const skipBtn = document.getElementById('skip-category-btn');
+    const skipLabel = document.getElementById('skip-category-label');
+    if (!skipBtn || !skipLabel) return;
+
+    const currentIndex = availableCategories.indexOf(currentCategory);
+    const hasNext = currentIndex !== -1 && currentIndex < availableCategories.length - 1;
+
+    if (hasNext) {
+        const nextCategory = availableCategories[currentIndex + 1];
+        skipBtn.href = `game.html?category=${encodeURIComponent(nextCategory)}`;
+        skipLabel.textContent = nextCategory;
+        skipBtn.classList.remove('hidden');
+    } else {
+        skipBtn.classList.add('hidden');
     }
 }
 
