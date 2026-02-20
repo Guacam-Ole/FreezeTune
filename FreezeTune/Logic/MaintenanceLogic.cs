@@ -42,6 +42,16 @@ public class MaintenanceLogic:IMaintenanceLogic
     }
 
 
+    public DateOnly? CheckUrl(string category, string url)
+    {
+        return _dbRepository.LastTimeWeHadUrl(category, url);
+    }
+
+    public DateOnly? CheckArtistTitle(string category, string interpret, string title)
+    {
+        return _dbRepository.LastTimeWeHad(category, interpret, title);
+    }
+
     public void Add(string category, Video video)
     {
         var counter = 0;

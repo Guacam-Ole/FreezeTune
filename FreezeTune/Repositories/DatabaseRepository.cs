@@ -55,6 +55,17 @@ public class DatabaseRepository : IDatabaseRepository
         return match?.Date;
     }
 
+    public DateOnly? LastTimeWeHadUrl(string category, string url)
+    {
+        using var db = new LiteDatabase(GetDbName(category));
+        var dailies = db.GetCollection<Daily>();
+        var urlLower = url.ToLowerInvariant();
+        var match = dailies.FindAll().FirstOrDefault(q =>
+            q.Category == category && q.Url != null &&
+            q.Url.ToLowerInvariant() == urlLower);
+        return match?.Date;
+    }
+
     public void Upsert(Daily daily)
     {
         using var db = new LiteDatabase(GetDbName(daily.Category));

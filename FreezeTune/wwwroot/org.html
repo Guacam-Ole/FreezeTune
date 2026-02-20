@@ -103,6 +103,18 @@
             color: var(--text-secondary);
             font-size: 0.9rem;
         }
+        .duplicate-warning {
+            margin-top: 8px;
+            padding: 10px 14px;
+            background: #92400e;
+            border: 1px solid #f59e0b;
+            border-radius: 6px;
+            color: #fde68a;
+            font-size: 0.9rem;
+        }
+        .duplicate-warning.hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -132,6 +144,7 @@
             <div class="input-group">
                 <label for="url">Url</label>
                 <input type="text" id="url" name="url" placeholder="Enter URL">
+                <div id="url-duplicate-warning" class="duplicate-warning hidden"></div>
             </div>
 
             <button type="button" class="submit-btn" id="download-btn">Download</button>
@@ -154,6 +167,8 @@
                 <input type="text" id="title" name="title" >
                 <p><b>To add more than one correct answer, seperate them by "|"</b></p>
             </div>
+
+            <div id="artist-title-duplicate-warning" class="duplicate-warning hidden"></div>
 
             <div id="images-grid" class="images-grid"></div>
 
