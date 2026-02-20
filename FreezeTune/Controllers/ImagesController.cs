@@ -39,7 +39,8 @@ public class ImagesController : Controller
         {
             TitleCaption = categoryConfig?.TitleCaption,
             ArtistCaption = categoryConfig?.ArtistCaption,
-            HasArtist = categoryConfig?.HasArtist ?? true
+            HasArtist = categoryConfig?.HasArtist ?? true,
+            SubTitle = categoryConfig?.SubTitle
         };
     }
     

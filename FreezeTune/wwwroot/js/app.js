@@ -135,6 +135,14 @@ async function loadCaptions() {
             document.querySelector('label[for="interpret"]').textContent = captions.artistCaption || 'Artist';
             document.querySelector('label[for="title"]').textContent = captions.titleCaption || 'Song Title';
             interpretInput.closest('.input-group').style.display = categoryHasArtist ? '' : 'none';
+
+            const subtitleEl = document.getElementById('category-subtitle');
+            if (captions.subTitle) {
+                subtitleEl.textContent = captions.subTitle;
+                subtitleEl.classList.remove('hidden');
+            } else {
+                subtitleEl.classList.add('hidden');
+            }
         }
     } catch (e) {
         console.error('Error loading captions:', e);

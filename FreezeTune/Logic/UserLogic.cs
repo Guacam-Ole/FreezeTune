@@ -44,9 +44,9 @@ public class UserLogic : IUserLogic
         var todaysRiddle = _databaseRepository.GetForToday(category);
         if (todaysRiddle == null) throw new Exception("Data is missing");
 
-        Console.WriteLine($"Maxdistance: {_maxDistance}");
         var hasArtist = _config.Categories.FirstOrDefault(q => q.Name == category)?.HasArtist ?? true;
-        var titleDistance = GetDistance(todaysRiddle.Title, title);
+        var titles = title.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var titleDistance = titles.Select(_ => GetDistance(todaysRiddle.Title, title)).Prepend(100d).Min();
         if (!hasArtist) return titleDistance <= _maxDistance;
         var artistDistance = GetDistance(todaysRiddle.Interpret, interpret);
         return artistDistance <= _maxDistance && titleDistance <= _maxDistance;

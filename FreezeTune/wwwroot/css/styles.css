@@ -156,6 +156,16 @@ header h1 {
     to { transform: rotate(360deg); }
 }
 
+/* Category Subtitle (hint below progress bar) */
+.category-subtitle {
+    text-align: center;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    font-style: italic;
+    margin-top: 20px;
+    margin-bottom: 5px;
+}
+
 /* Form */
 .guess-form {
     margin-bottom: 20px;

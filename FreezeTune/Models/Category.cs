@@ -9,4 +9,5 @@ public class Category
     public bool ShowHints { get; set; } = true;
     public bool HasArtist { get; set; } = true;
     public string? Header { get; set; }
+    public string? SubTitle { get; set; }
 }
