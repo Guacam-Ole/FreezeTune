@@ -96,17 +96,22 @@ async function checkUrlDuplicate() {
     const url = urlInput.value.trim();
     if (!url) {
         urlDuplicateWarning.classList.add('hidden');
+        urlInput.classList.remove('duplicate');
         return;
     }
     try {
         const response = await fetch(`/Maintenance/CheckUrl?category=${encodeURIComponent(getSelectedCategory())}&url=${encodeURIComponent(url)}`);
         if (response.ok) {
-            const date = await response.json();
-            if (date) {
-                urlDuplicateWarning.textContent = `Warning: This URL was already added on ${date}.`;
+            const text = (await response.text()).replace(/^"|"$/g, '').trim();
+            if (text && text !== 'null') {
+                const msg = `This URL was already added on ${text}.`;
+                urlDuplicateWarning.textContent = msg;
                 urlDuplicateWarning.classList.remove('hidden');
+                urlInput.classList.add('duplicate');
+                showError(msg);
             } else {
                 urlDuplicateWarning.classList.add('hidden');
+                urlInput.classList.remove('duplicate');
             }
         }
     } catch (e) {
@@ -117,19 +122,32 @@ async function checkUrlDuplicate() {
 async function checkArtistTitleDuplicate() {
     const interpret = interpretInput.value.trim();
     const title = titleInput.value.trim();
-    if (!interpret || !title) {
+    if (!interpret && !title) {
         artistTitleDuplicateWarning.classList.add('hidden');
+        interpretInput.classList.remove('duplicate');
+        titleInput.classList.remove('duplicate');
         return;
     }
     try {
-        const response = await fetch(`/Maintenance/CheckArtistTitle?category=${encodeURIComponent(getSelectedCategory())}&interpret=${encodeURIComponent(interpret)}&title=${encodeURIComponent(title)}`);
+        const params = new URLSearchParams({
+            category: getSelectedCategory(),
+            interpret: interpret,
+            title: title
+        });
+        const response = await fetch(`/Maintenance/CheckArtistTitle?${params}`);
         if (response.ok) {
-            const date = await response.json();
-            if (date) {
-                artistTitleDuplicateWarning.textContent = `Warning: "${interpret} - ${title}" was already added on ${date}.`;
+            const text = (await response.text()).replace(/^"|"$/g, '').trim();
+            if (text && text !== 'null') {
+                const msg = `"${interpret} - ${title}" was already added on ${text}.`;
+                artistTitleDuplicateWarning.textContent = msg;
                 artistTitleDuplicateWarning.classList.remove('hidden');
+                interpretInput.classList.add('duplicate');
+                titleInput.classList.add('duplicate');
+                showError(msg);
             } else {
                 artistTitleDuplicateWarning.classList.add('hidden');
+                interpretInput.classList.remove('duplicate');
+                titleInput.classList.remove('duplicate');
             }
         }
     } catch (e) {

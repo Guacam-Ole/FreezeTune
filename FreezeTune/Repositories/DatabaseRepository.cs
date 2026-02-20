@@ -49,9 +49,17 @@ public class DatabaseRepository : IDatabaseRepository
     {
         using var db = new LiteDatabase(GetDbName(category));
         var dailies = db.GetCollection<Daily>();
-        var match = dailies.FindOne(q =>
-            q.Category == category && q.Interpret.Equals(interpret, StringComparison.CurrentCultureIgnoreCase) &&
-            q.Title.Equals(title, StringComparison.CurrentCultureIgnoreCase));
+        var match = dailies.FindAll().FirstOrDefault(q =>
+        {
+            var titleMatch = q.Title != null &&
+                             q.Title.Equals(title, StringComparison.OrdinalIgnoreCase);
+            if (!titleMatch) return false;
+
+            if (string.IsNullOrEmpty(interpret)) return true;
+
+            return q.Interpret != null &&
+                   q.Interpret.Equals(interpret, StringComparison.OrdinalIgnoreCase);
+        });
         return match?.Date;
     }
 
@@ -59,11 +67,19 @@ public class DatabaseRepository : IDatabaseRepository
     {
         using var db = new LiteDatabase(GetDbName(category));
         var dailies = db.GetCollection<Daily>();
-        var urlLower = url.ToLowerInvariant();
+        var urlLower = NormalizeYouTubeUrl(url);
         var match = dailies.FindAll().FirstOrDefault(q =>
-            q.Category == category && q.Url != null &&
-            q.Url.ToLowerInvariant() == urlLower);
+            q.Url != null &&
+            NormalizeYouTubeUrl(q.Url) == urlLower);
         return match?.Date;
+    }
+
+    private static string NormalizeYouTubeUrl(string url)
+    {
+        url = url.Trim().ToLowerInvariant();
+        var ampIndex = url.IndexOf('&');
+        if (ampIndex > 0) url = url[..ampIndex];
+        return url;
     }
 
     public void Upsert(Daily daily)
