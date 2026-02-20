@@ -13,10 +13,14 @@ const errorMessage = document.getElementById('error-message');
 const progressContainer = document.getElementById('progress-container');
 const progressFill = document.getElementById('progress-fill');
 const progressText = document.getElementById('progress-text');
+const urlDuplicateWarning = document.getElementById('url-duplicate-warning');
+const artistTitleDuplicateWarning = document.getElementById('artist-title-duplicate-warning');
 
 let currentVideo = null;
 let selectedImages = [];
 let progressInterval = null;
+let urlCheckTimeout = null;
+let artistTitleCheckTimeout = null;
 
 window.addEventListener('DOMContentLoaded', loadCategories);
 downloadBtn.addEventListener('click', handleDownload);
@@ -24,6 +28,23 @@ addVideoBtn.addEventListener('click', handleAddVideo);
 categorySelect.addEventListener('change', () => {
     loadDate();
     loadCaptions();
+    checkUrlDuplicate();
+    checkArtistTitleDuplicate();
+});
+
+urlInput.addEventListener('input', () => {
+    clearTimeout(urlCheckTimeout);
+    urlCheckTimeout = setTimeout(checkUrlDuplicate, 500);
+});
+
+interpretInput.addEventListener('input', () => {
+    clearTimeout(artistTitleCheckTimeout);
+    artistTitleCheckTimeout = setTimeout(checkArtistTitleDuplicate, 500);
+});
+
+titleInput.addEventListener('input', () => {
+    clearTimeout(artistTitleCheckTimeout);
+    artistTitleCheckTimeout = setTimeout(checkArtistTitleDuplicate, 500);
 });
 
 async function loadCategories() {
@@ -33,7 +54,7 @@ async function loadCategories() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const categories = await response.json();
-        const categoryNames = Object.keys(categories);
+        const categoryNames = categories.map(cat => cat.name);
 
         categorySelect.innerHTML = '';
         categoryNames.forEach(category => {
@@ -62,11 +83,75 @@ async function loadCaptions() {
         const response = await fetch(`/Image/Captions?category=${encodeURIComponent(getSelectedCategory())}`);
         if (response.ok) {
             const captions = await response.json();
-            document.querySelector('label[for="interpret"]').textContent = captions.value || 'Interpret';
-            document.querySelector('label[for="title"]').textContent = captions.key || 'Title';
+            document.querySelector('label[for="interpret"]').textContent = captions.artistCaption || 'Interpret';
+            document.querySelector('label[for="title"]').textContent = captions.titleCaption || 'Title';
+            interpretInput.closest('.input-group').style.display = captions.hasArtist !== false ? '' : 'none';
         }
     } catch (e) {
         console.error('Error loading captions:', e);
+    }
+}
+
+async function checkUrlDuplicate() {
+    const url = urlInput.value.trim();
+    if (!url) {
+        urlDuplicateWarning.classList.add('hidden');
+        urlInput.classList.remove('duplicate');
+        return;
+    }
+    try {
+        const response = await fetch(`/Maintenance/CheckUrl?category=${encodeURIComponent(getSelectedCategory())}&url=${encodeURIComponent(url)}`);
+        if (response.ok) {
+            const text = (await response.text()).replace(/^"|"$/g, '').trim();
+            if (text && text !== 'null') {
+                const msg = `This URL was already added on ${text}.`;
+                urlDuplicateWarning.textContent = msg;
+                urlDuplicateWarning.classList.remove('hidden');
+                urlInput.classList.add('duplicate');
+                showError(msg);
+            } else {
+                urlDuplicateWarning.classList.add('hidden');
+                urlInput.classList.remove('duplicate');
+            }
+        }
+    } catch (e) {
+        console.error('Error checking URL duplicate:', e);
+    }
+}
+
+async function checkArtistTitleDuplicate() {
+    const interpret = interpretInput.value.trim();
+    const title = titleInput.value.trim();
+    if (!interpret && !title) {
+        artistTitleDuplicateWarning.classList.add('hidden');
+        interpretInput.classList.remove('duplicate');
+        titleInput.classList.remove('duplicate');
+        return;
+    }
+    try {
+        const params = new URLSearchParams({
+            category: getSelectedCategory(),
+            interpret: interpret,
+            title: title
+        });
+        const response = await fetch(`/Maintenance/CheckArtistTitle?${params}`);
+        if (response.ok) {
+            const text = (await response.text()).replace(/^"|"$/g, '').trim();
+            if (text && text !== 'null') {
+                const msg = `"${interpret} - ${title}" was already added on ${text}.`;
+                artistTitleDuplicateWarning.textContent = msg;
+                artistTitleDuplicateWarning.classList.remove('hidden');
+                interpretInput.classList.add('duplicate');
+                titleInput.classList.add('duplicate');
+                showError(msg);
+            } else {
+                artistTitleDuplicateWarning.classList.add('hidden');
+                interpretInput.classList.remove('duplicate');
+                titleInput.classList.remove('duplicate');
+            }
+        }
+    } catch (e) {
+        console.error('Error checking artist/title duplicate:', e);
     }
 }
 
@@ -163,6 +248,7 @@ async function handleDownload() {
         interpretInput.value = result.interpret || '';
         titleInput.value = result.title || '';
 
+        await checkArtistTitleDuplicate();
         await loadTempImages(apiKey);
     } catch (error) {
         showError('Download failed: ' + error.message);

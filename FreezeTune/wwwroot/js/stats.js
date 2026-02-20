@@ -13,7 +13,7 @@ async function loadCategories() {
         }
 
         const categories = await response.json();
-        const categoryNames = Object.keys(categories);
+        const categoryNames = categories.map(cat => cat.name);
 
         categorySelect.innerHTML = '';
         categoryNames.forEach(category => {
@@ -38,7 +38,7 @@ async function loadStats(category) {
     statsChart.innerHTML = '';
 
     try {
-        const response = await fetch(`/Stats?category=${category}`);
+        const response = await fetch(`/Stats?category=${encodeURIComponent(category)}`);
         if (!response.ok) {
             throw new Error('Failed to load statistics');
         }
