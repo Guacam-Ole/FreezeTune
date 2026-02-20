@@ -5,12 +5,15 @@
   "MaxDistance": 0.1,
   "Categories": [
     {
+      "Header": "Music by Decade",
       "Name": "80s"
     },
     {
+      "Header": "Music by Decade",
       "Name": "90s"
     },
     {
+      "Header": "Music by Artist",
       "Name": "Weird Al",
       "TitleCaption": "Weird Al's song title",
       "ArtistCaption": "Parody of...",

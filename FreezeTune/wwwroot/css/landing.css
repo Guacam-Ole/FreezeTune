@@ -68,6 +68,21 @@
     font-size: 0.95rem;
 }
 
+.category-group {
+    margin-top: 30px;
+}
+
+.category-group-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--surface-light);
+}
+
 .loading-container {
     text-align: center;
     padding: 40px;

@@ -156,6 +156,16 @@ header h1 {
     to { transform: rotate(360deg); }
 }
 
+/* Category Subtitle (hint below progress bar) */
+.category-subtitle {
+    text-align: center;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    font-style: italic;
+    margin-top: 20px;
+    margin-bottom: 5px;
+}
+
 /* Form */
 .guess-form {
     margin-bottom: 20px;
@@ -252,6 +262,25 @@ header h1 {
 .submit-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+/* Skip Category Button */
+.skip-category-btn {
+    display: block;
+    text-align: center;
+    margin-top: 12px;
+    padding: 10px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.skip-category-btn:hover {
+    color: var(--text-primary);
+    background: var(--surface-light);
 }
 
 /* Category Selector */

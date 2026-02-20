@@ -33,7 +33,7 @@ async function loadCategories() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const categories = await response.json();
-        const categoryNames = Object.keys(categories);
+        const categoryNames = categories.map(cat => cat.name);
 
         categorySelect.innerHTML = '';
         categoryNames.forEach(category => {
@@ -62,8 +62,9 @@ async function loadCaptions() {
         const response = await fetch(`/Image/Captions?category=${encodeURIComponent(getSelectedCategory())}`);
         if (response.ok) {
             const captions = await response.json();
-            document.querySelector('label[for="interpret"]').textContent = captions.value || 'Interpret';
-            document.querySelector('label[for="title"]').textContent = captions.key || 'Title';
+            document.querySelector('label[for="interpret"]').textContent = captions.artistCaption || 'Interpret';
+            document.querySelector('label[for="title"]').textContent = captions.titleCaption || 'Title';
+            interpretInput.closest('.input-group').style.display = captions.hasArtist !== false ? '' : 'none';
         }
     } catch (e) {
         console.error('Error loading captions:', e);
