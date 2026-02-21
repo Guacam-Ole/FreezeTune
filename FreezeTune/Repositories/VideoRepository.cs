@@ -187,7 +187,7 @@ public class VideoRepository : IVideoRepository
             try
             {
                 (author, title) = await DownloadVideoWithYtDlp(category, url, date,
-                    p => ReportProgress(p / 2, "Dailymotion Download"));
+                    p => ReportProgress(p / 2, "Dailymotion Download"), referer: "https://www.dailymotion.com");
             }
             catch (Exception)
             {
@@ -372,7 +372,7 @@ public class VideoRepository : IVideoRepository
     }
 
     private async Task<(string, string)> DownloadVideoWithYtDlp(string category, string url, DateOnly date,
-        Action<int>? onProgress = null)
+        Action<int>? onProgress = null, string? referer = null)
     {
         const string shellCommand = "yt-dlp";
         try
@@ -393,14 +393,12 @@ public class VideoRepository : IVideoRepository
                 }
             }, progressCts.Token);
 
+            List<string> args = ["--merge-output-format", "mp4", "-f", "bestvideo+bestaudio/best"];
+            if (referer != null) args.AddRange(["--referer", referer]);
+            args.AddRange(["-o", outputTemplate, url]);
+
             var response = await Cli.Wrap(shellCommand)
-                .WithArguments([
-                    "--merge-output-format", "mp4",
-                    "-f", "bestvideo+bestaudio/best",
-                    "--referer", "https://www.dailymotion.com",
-                    "-o", outputTemplate,
-                    url
-                ])
+                .WithArguments(args)
                 .ExecuteBufferedAsync();
 
             progressCts.Cancel();

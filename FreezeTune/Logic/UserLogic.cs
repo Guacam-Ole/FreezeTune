@@ -38,19 +38,6 @@ public class UserLogic : IUserLogic
         var distance=jaro.Distance(cleanedOriginal, cleanedGuess);
         return distance;
     }
-
-    public bool ValuesAreCorrect(string category, string interpret, string title)
-    {
-        var todaysRiddle = _databaseRepository.GetForToday(category);
-        if (todaysRiddle == null) throw new Exception("Data is missing");
-
-        var hasArtist = _config.Categories.FirstOrDefault(q => q.Name == category)?.HasArtist ?? true;
-        var titles = title.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        var titleDistance = titles.Select(_ => GetDistance(todaysRiddle.Title, title)).Prepend(100d).Min();
-        if (!hasArtist) return titleDistance <= _maxDistance;
-        var artistDistance = GetDistance(todaysRiddle.Interpret, interpret);
-        return artistDistance <= _maxDistance && titleDistance <= _maxDistance;
-    }
     
     public CalculationResult TakeAGuess(string category, Guess guess)
     {
@@ -59,7 +46,8 @@ public class UserLogic : IUserLogic
 
         var hasArtist = _config.Categories.FirstOrDefault(q => q.Name == category)?.HasArtist ?? true;
         var artistDistance = hasArtist ? GetDistance(todaysRiddle.Interpret, guess.Interpret) : 0;
-        var titleDistance = GetDistance(todaysRiddle.Title, guess.Title);
+        var titles = todaysRiddle.Title.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var titleDistance = titles.Select(q => GetDistance(q, guess.Title)).Prepend(100d).Min();
 
         var result = new CalculationResult
         {
