@@ -91,7 +91,6 @@ public class ImagesController : Controller
     [HttpGet("Stream")]
     public IActionResult? GetVideoStream(string category, Guess guess)
     {
-        if (!_userLogic.ValuesAreCorrect(category, guess.Interpret, guess.Title)) return null; // nice try cheating
         var daily = _databaseRepository.GetForToday(category);
         if (!System.IO.File.Exists(daily.VideoFile))
         {
