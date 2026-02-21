@@ -55,4 +55,8 @@ RUN tidal-dl-ng cfg quality_video 1080
 RUN tidal-dl-ng cfg path_binary_ffmpeg "/usr/bin/ffmpeg"
 RUN tidal-dl-ng cfg video_convert_mp4 true
 
+RUN python3.12 -m venv /opt/yt-dlp \
+    && /opt/yt-dlp/bin/pip install --no-cache-dir "yt-dlp @ https://github.com/yt-dlp/yt-dlp-nightly-builds/releases/latest/download/yt-dlp.tar.gz" curl_cffi \
+    && ln -s /opt/yt-dlp/bin/yt-dlp /usr/local/bin/yt-dlp
+
 ENTRYPOINT ["dotnet", "FreezeTune.dll"]

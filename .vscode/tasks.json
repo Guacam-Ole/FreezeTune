@@ -36,6 +36,37 @@
                 "${workspaceFolder}/FreezeTune/FreezeTune.csproj"
             ],
             "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "docker-build",
+            "type": "shell",
+            "command": "docker-compose build",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "docker-run",
+            "type": "shell",
+            "command": "docker-compose up --build",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "docker-stop",
+            "type": "shell",
+            "command": "docker-compose down",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
         }
     ]
 }
