@@ -158,14 +158,44 @@ public class VideoRepository : IVideoRepository
 
             if (_lastYtFailure != null)
             {
-                _logger.LogDebug("Grabbing images because of yt error");
-                (author, title) =
-                    await DownloadImagesFromVideo(url, date, category, numberOfFrames, p => ReportProgress(p / 2, "Frame Capture"));
+                var ytDlpSucceeded = false;
+                try
+                {
+                    _logger.LogDebug("Trying yt-dlp as YouTube fallback");
+                    (author, title) = await DownloadVideoWithYtDlp(category, url, date,
+                        p => ReportProgress(p / 2, "yt-dlp Download"));
+                    ytDlpSucceeded = true;
+                }
+                catch (Exception)
+                {
+                    _logger.LogDebug("yt-dlp also failed, falling back to screengrab");
+                }
+
+                if (!ytDlpSucceeded)
+                {
+                    _logger.LogDebug("Grabbing images because of yt error");
+                    (author, title) =
+                        await DownloadImagesFromVideo(url, date, category, numberOfFrames, p => ReportProgress(p / 2, "Frame Capture"));
+                }
             }
         }
         else if (url.Contains("tidal"))
             (author, title) =
                 await DownloadVideoFromTidal(category, url, date, p => ReportProgress(p / 2, "Tidal Download"));
+        else if (url.Contains("dailymotion"))
+        {
+            try
+            {
+                (author, title) = await DownloadVideoWithYtDlp(category, url, date,
+                    p => ReportProgress(p / 2, "Dailymotion Download"));
+            }
+            catch (Exception)
+            {
+                _logger.LogDebug("yt-dlp failed for Dailymotion, falling back to screengrab");
+                (author, title) = await DownloadImagesFromVideo(url, date, category, numberOfFrames,
+                    p => ReportProgress(p / 2, "Frame Capture"));
+            }
+        }
         else throw new Exception("wrong url");
 
         if (author == "auth") return new Video { Error = "Requires Tidal Token. Please auth in Docker" };
@@ -337,6 +367,62 @@ public class VideoRepository : IVideoRepository
         catch (Exception e)
         {
             _logger.LogError(e, "Failed downloading '{Url}' from Tidal",tidalUrl);
+            throw;
+        }
+    }
+
+    private async Task<(string, string)> DownloadVideoWithYtDlp(string category, string url, DateOnly date,
+        Action<int>? onProgress = null)
+    {
+        const string shellCommand = "yt-dlp";
+        try
+        {
+            var outputTemplate = $"{GetVideoCategoryPath(category)}/{date:yyyy-MM-dd}|||%(uploader)s||%(title)s.%(ext)s";
+
+            var progressCts = new CancellationTokenSource();
+            var progressTask = Task.Run(async () =>
+            {
+                var startTime = DateTime.Now;
+                const int totalSeconds = 30;
+                while (!progressCts.Token.IsCancellationRequested)
+                {
+                    var elapsed = (DateTime.Now - startTime).TotalSeconds;
+                    var percent = Math.Min(99, (int)(elapsed / totalSeconds * 100));
+                    onProgress?.Invoke(percent);
+                    await Task.Delay(300, progressCts.Token).ConfigureAwait(false);
+                }
+            }, progressCts.Token);
+
+            var response = await Cli.Wrap(shellCommand)
+                .WithArguments([
+                    "--merge-output-format", "mp4",
+                    "-f", "bestvideo+bestaudio/best",
+                    "--referer", "https://www.dailymotion.com",
+                    "-o", outputTemplate,
+                    url
+                ])
+                .ExecuteBufferedAsync();
+
+            progressCts.Cancel();
+            try { await progressTask; } catch (OperationCanceledException) { }
+            onProgress?.Invoke(100);
+
+            if (!response.IsSuccess) throw new Exception("Download failed");
+
+            var downloadedFiles = Directory.GetFiles(GetVideoCategoryPath(category), $"{date:yyyy-MM-dd}*.mp4");
+            var match = downloadedFiles.OrderByDescending(q => q).First();
+            var rightPart = match[(match.IndexOf("|||", StringComparison.CurrentCulture) + 3)..];
+            var parts = rightPart.Split("||");
+
+            var artist = parts[0];
+            var title = parts[1][..parts[1].LastIndexOf('.')];
+
+            _logger.LogInformation("Downloaded '{Artist}' - '{Title}' via yt-dlp from '{Url}'", artist, title, url);
+            return (artist, title);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Failed downloading '{Url}' via yt-dlp", url);
             throw;
         }
     }
