@@ -650,28 +650,16 @@ function formatDate() {
     return `${day}.${month}.${year}`;
 }
 
-// Generate emoji chain for a single quiz
-function generateEmojiChain(guesses, success) {
-    const filmEmoji = '🎞️';
-    const failEmoji = '🔇';
-
-    // Build film strip chain (one per guess/image seen)
-    let chain = '';
-    for (let i = 0; i < guesses; i++) {
-        chain += filmEmoji + ' ';
+// Generate emoji for a single quiz result
+function generateResultEmoji(guesses, success) {
+    if (!success) {
+        return '🔇';
     }
 
-    // Add result emoji at the end
-    if (success) {
-        if (guesses === 1) chain += '🥇';
-        else if (guesses === 2) chain += '🥈';
-        else if (guesses === 3) chain += '🥉';
-        else chain += '🏅';
-    } else {
-        chain += failEmoji;
-    }
-
-    return chain;
+    if (guesses === 1) return '🥇';
+    if (guesses === 2) return '🥈';
+    if (guesses === 3) return '🥉';
+    return '🍪'; // Cookie for 4+ guesses
 }
 
 // Generate share text for all completed quizzes today
@@ -682,25 +670,50 @@ function generateShareText() {
     // If no completed quizzes, fall back to current game result
     if (quizzes.length === 0) {
         const { guesses, success } = lastGameResult;
-        const emojiChain = generateEmojiChain(guesses, success);
+        const emoji = generateResultEmoji(guesses, success);
         const score = calculateScore(guesses, success);
         const guessDisplay = success ? `${guesses}/8` : '-/8';
-        return `FreezeTune Quiz ${date}\n\n${currentCategory}: ${emojiChain} ${guessDisplay}\n\nScore: ${score}\n\n#FreezeTune freezetune.com`;
+        return `FreezeTune ${date}\n${emoji} ${guessDisplay} · ${currentCategory}\nScore: ${score} · #FreezeTune freezetune.com`;
     }
 
-    // Build the share text with all quizzes
+    // Group quizzes by emoji/result
+    const grouped = {};
     let totalScore = 0;
-    let quizLines = [];
 
     for (const quiz of quizzes) {
-        const emojiChain = generateEmojiChain(quiz.guesses, quiz.success);
+        const emoji = generateResultEmoji(quiz.guesses, quiz.success);
         const score = calculateScore(quiz.guesses, quiz.success);
         totalScore += score;
         const guessDisplay = quiz.success ? `${quiz.guesses}/8` : '-/8';
-        quizLines.push(`${quiz.category}: ${emojiChain} ${guessDisplay}`);
+
+        const key = `${emoji} ${guessDisplay}`;
+        if (!grouped[key]) {
+            grouped[key] = {
+                emoji: emoji,
+                guesses: quiz.guesses,
+                success: quiz.success,
+                categories: []
+            };
+        }
+        grouped[key].categories.push(quiz.category);
     }
 
-    return `FreezeTune Quiz ${date}\n\n${quizLines.join('\n')}\n\nScore: ${totalScore}\n\n#FreezeTune freezetune.com`;
+    // Sort groups by guesses (1st place first, then 2nd, etc., failed last)
+    const sortedGroups = Object.values(grouped).sort((a, b) => {
+        if (!a.success && !b.success) return 0;
+        if (!a.success) return 1;
+        if (!b.success) return -1;
+        return a.guesses - b.guesses;
+    });
+
+    // Build compact lines
+    const quizLines = sortedGroups.map(group => {
+        const guessDisplay = group.success ? `${group.guesses}/8` : '-/8';
+        const categories = group.categories.join(' · ');
+        return `${group.emoji} ${guessDisplay} · ${categories}`;
+    });
+
+    return `FreezeTune ${date}\n${quizLines.join('\n')}\nScore: ${totalScore} · #FreezeTune freezetune.com`;
 }
 
 // Check if device is mobile (where Web Share API makes sense)
