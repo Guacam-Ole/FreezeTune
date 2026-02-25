@@ -16,7 +16,7 @@
     display: block;
     position: relative;
     border-radius: var(--border-radius);
-    padding: 50px 20px;
+    padding: 30px 20px;
     text-align: center;
     text-decoration: none;
     color: var(--text-primary);
@@ -61,12 +61,6 @@
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
 }
 
-.category-card p {
-    position: relative;
-    margin-top: 10px;
-    color: var(--text-secondary);
-    font-size: 0.95rem;
-}
 
 .category-group {
     margin-top: 30px;
