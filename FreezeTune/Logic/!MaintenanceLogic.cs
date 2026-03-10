@@ -1,3 +1,5 @@
+using FreezeTune.Models;
+
 namespace FreezeTune.Logic;
 
 public interface IMaintenanceLogic
@@ -8,4 +10,5 @@ public interface IMaintenanceLogic
     Dictionary<int, string> GetTmpImages(string category, Models.Video video);
     DateOnly? CheckUrl(string category, string url);
     DateOnly? CheckArtistTitle(string category, string interpret, string title);
+    Dictionary<string, List<Daily>> GetAllEntries();
 }

@@ -17,13 +17,6 @@ public class DatabaseRepository : IDatabaseRepository
         return $"{_config.BasePath}/db/dailies_{category}.db";
     }
 
-    // public Daily? GetForDay(string category, DateOnly date)
-    // {
-    //     using var db = new LiteDatabase(GetDbName(category));
-    //     var dailies = db.GetCollection<Daily>();
-    //     return dailies.FindOne(q => q.Date == date);
-    // }
-
     public Daily GetForToday(string category)
     {
         var today = new DateOnly(DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day);
@@ -43,6 +36,13 @@ public class DatabaseRepository : IDatabaseRepository
         using var db = new LiteDatabase(GetDbName(category));
         var dailies = db.GetCollection<Daily>();
         return dailies.Count();
+    }
+
+    public List<Daily> GetALlForCategory(string category)
+    {
+        using var db = new LiteDatabase(GetDbName(category));
+        var dailies = db.GetCollection<Daily>();
+        return dailies.FindAll().ToList();
     }
 
     public DateOnly? LastTimeWeHad(string category, string interpret, string title)
