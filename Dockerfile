@@ -2,13 +2,13 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build-env
 ENV TZ="Europe/Berlin"
 WORKDIR /App
 
-# Copy everything
-COPY . ./
+# Copy only project files first to cache dotnet restore separately
+COPY FreezeTune/FreezeTune.csproj FreezeTune/
+RUN dotnet restore FreezeTune/FreezeTune.csproj
 
-# Restore as distinct layers
-RUN dotnet restore
-# Build and publish a release
-RUN dotnet publish -f net9.0 -c Release -o out -p:StaticWebAssetsEnabled=false
+# Now copy everything and build
+COPY . ./
+RUN dotnet publish FreezeTune/FreezeTune.csproj -f net9.0 -c Release -o out -p:StaticWebAssetsEnabled=false
 
 # Install Playwright browsers in the SDK stage
 RUN dotnet tool install --global Microsoft.Playwright.CLI \
@@ -17,6 +17,8 @@ RUN dotnet tool install --global Microsoft.Playwright.CLI \
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
 WORKDIR /App
+
+# --- Stable layers first (cached as long as these don't change) ---
 
 RUN apt-get update && apt-get install -y ffmpeg \
     build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev \
@@ -28,9 +30,6 @@ RUN apt-get update && apt-get install -y ffmpeg \
     && cd .. && rm -rf Python-3.12.8 Python-3.12.8.tgz \
     && apt-get purge -y build-essential && apt-get autoremove -y \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Copy the built .NET app
-COPY --from=build-env /App/out .
 
 # Install Playwright dependencies and Chromium
 RUN apt-get update && apt-get install -y \
@@ -58,5 +57,8 @@ RUN tidal-dl-ng cfg video_convert_mp4 true
 RUN python3.12 -m venv /opt/yt-dlp \
     && /opt/yt-dlp/bin/pip install --no-cache-dir "yt-dlp @ https://github.com/yt-dlp/yt-dlp-nightly-builds/releases/latest/download/yt-dlp.tar.gz" curl_cffi \
     && ln -s /opt/yt-dlp/bin/yt-dlp /usr/local/bin/yt-dlp
+
+# --- App output last (changes every deploy, but nothing below gets invalidated) ---
+COPY --from=build-env /App/out .
 
 ENTRYPOINT ["dotnet", "FreezeTune.dll"]
