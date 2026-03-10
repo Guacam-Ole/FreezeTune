@@ -22,13 +22,14 @@ public class MaintenanceController : ControllerBase
         _logger = logger;
     }
 
-    private void ValidateKey(string category, string key)
+    private void ValidateKey(string? category, string key)
     {
-        var categoryConfig = _config.Categories.FirstOrDefault(q => q.Name == category);
-        if (categoryConfig == null) throw new Exception("Wrong Catgory");
         var masterKey = Environment.GetEnvironmentVariable("FREEZEAPIKEY");
         if (key == masterKey) return;
-
+        if (category == null) throw new Exception("Wrong key");
+        
+        var categoryConfig = _config.Categories.FirstOrDefault(q => q.Name == category);
+        if (categoryConfig == null) throw new Exception("Wrong Category");
         if (categoryConfig.Password == null || categoryConfig.Password != key) throw new Exception("Wrong key");
     }
 
@@ -71,6 +72,13 @@ public class MaintenanceController : ControllerBase
             if (sessionId != null) _progressService.Remove(sessionId);
             return new Video { Error = e.Message };
         }
+    }
+
+    [HttpGet("All")]
+    public ActionResult<Dictionary<string, List<Daily>>> GetAll(string key)
+    {
+        ValidateKey("egal", key);
+        return Ok(_maintenanceLogic.GetAllEntries());
     }
 
     [HttpGet("Progress")]

@@ -11,12 +11,14 @@ public class MaintenanceLogic:IMaintenanceLogic
     private readonly IDatabaseRepository _dbRepository;
     private readonly IVideoRepository _ytRepository;
     private readonly IImageRepository _imageRepositor;
+    private readonly Config _config;
 
-    public MaintenanceLogic(IDatabaseRepository dbRepository, IVideoRepository ytRepository, IImageRepository imageRepositor)
+    public MaintenanceLogic(IDatabaseRepository dbRepository, IVideoRepository ytRepository, IImageRepository imageRepositor, Config config)
     {
         _dbRepository = dbRepository;
         _ytRepository = ytRepository;
         _imageRepositor = imageRepositor;
+        _config = config;
     }
     
     
@@ -50,6 +52,21 @@ public class MaintenanceLogic:IMaintenanceLogic
     public DateOnly? CheckArtistTitle(string category, string interpret, string title)
     {
         return _dbRepository.LastTimeWeHad(category, interpret, title);
+    }
+
+    public Dictionary<string, List<Daily>> GetAllEntries()
+    {
+        var allEntries = new Dictionary<string, List<Daily>>();
+        foreach (var category in _config.Categories)
+        {
+            var entries= _dbRepository.GetALlForCategory(category.Name);
+            if (entries?.Count > 0)
+            {
+                allEntries.Add(category.Name, entries.OrderBy(q=>q.Date).ToList());
+            }
+        }
+
+        return allEntries;
     }
 
     public void Add(string category, Video video)
