@@ -86,18 +86,23 @@ public class VideoRepository : IVideoRepository
         int numberOfFrames, Action<int>? onProgress = null)
     {
         var videoFile = GetTempVideoPathFor(category, date, author, title);
-        if (File.Exists(videoFile))
-        {
-            var videoInfo = await FFmpeg.GetMediaInfo(videoFile);
-            var diff = videoInfo.Duration / numberOfFrames;
-            var positions = new List<TimeSpan>();
-            for (var i = 0; i < numberOfFrames; i++)
+        if (!File.Exists(videoFile))
+            return new Video
             {
-                positions.Add(i * diff);
-            }
-
-            await ExtractSingleFrames(date, category, positions.ToArray(), onProgress);
+                Date = date,
+                Interpret = author,
+                Title = title,
+                Url = url
+            };
+        var videoInfo = await FFmpeg.GetMediaInfo(videoFile);
+        var diff = videoInfo.Duration / numberOfFrames;
+        var positions = new List<TimeSpan>();
+        for (var i = 0; i < numberOfFrames; i++)
+        {
+            positions.Add(i * diff);
         }
+
+        await ExtractSingleFrames(date, category, positions.ToArray(), onProgress);
 
         return new Video
         {
@@ -438,6 +443,7 @@ public class VideoRepository : IVideoRepository
             {
                 var res = await FFmpeg.Conversions.FromSnippet.Snapshot(filename,
                     GetImagePathFor(date, category, "tmp", counter++), timeSpan);
+                res.AddParameter("-y", ParameterPosition.PreInput); // Allow Overwrite
                 await res.Start();
                 onProgress?.Invoke(counter * 100 / total);
             }

@@ -14,4 +14,5 @@ public interface IDatabaseRepository
     List<Stats> GetQuarterStats(string category);
     int CountForCategory(string category);
 
+    List<Daily> GetALlForCategory(string category);
 }
