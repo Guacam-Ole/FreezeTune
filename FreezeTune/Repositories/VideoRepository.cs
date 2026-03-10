@@ -443,7 +443,7 @@ public class VideoRepository : IVideoRepository
             {
                 var res = await FFmpeg.Conversions.FromSnippet.Snapshot(filename,
                     GetImagePathFor(date, category, "tmp", counter++), timeSpan);
-                res.AddParameter("-y", ParameterPosition.PreInput); // Allow Overwrite
+                res.SetOverwriteOutput(true);
                 await res.Start();
                 onProgress?.Invoke(counter * 100 / total);
             }
