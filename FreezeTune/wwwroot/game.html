@@ -60,10 +60,10 @@
 </head>
 <body>
 <div class="container">
-    <header>
-        <h1>FreezeTune Music Quiz</h1>
-        <p class="subtitle"></p>
-    </header>
+    <div class="game-meta">
+        <span id="category-label" class="category-label"></span>
+        <div id="replay-badge" class="replay-badge hidden"></div>
+    </div>
 
     <div id="game-screen" class="game-screen">
         <div class="image-container">
@@ -78,8 +78,6 @@
             <div class="progress-fill" id="progress-fill"></div>
             <div class="progress-text" id="progress-text">Image 1 of 8</div>
         </div>
-
-        <div id="replay-badge" class="replay-badge hidden"></div>
 
         <p id="category-subtitle" class="category-subtitle hidden"></p>
 
@@ -113,9 +111,6 @@
             </button>
         </form>
 
-        <a id="skip-category-btn" href="#" class="skip-category-btn hidden">
-            Skip to <span id="skip-category-label"></span> →
-        </a>
     </div>
 
     <div id="success-screen" class="success-screen hidden">
@@ -130,8 +125,6 @@
                 <p id="success-title"></p>
                 <p class="guess-count">You got it in <span id="final-guess-count"></span> guess(es)!</p>
             </div>
-
-
 
             <div class="video-container">
                 <video id="local-video" controls width="100%" height="400" class="hidden">
@@ -152,30 +145,28 @@
                 <h4>Your Journey</h4>
                 <div id="thumbnail-grid" class="thumbnail-grid"></div>
             </div>
-
-            <div id="quiz-navigation" class="quiz-navigation">
-                <a id="prev-quiz-btn" href="#" class="quiz-nav-btn prev-btn hidden">
-                    <span class="nav-arrow">←</span>
-                    <span id="prev-quiz-label">Previous</span>
-                </a>
-                <button id="share-results-btn" class="share-results-btn">Share Results</button>
-                <a id="next-quiz-btn" href="#" class="quiz-nav-btn next-btn hidden">
-                    <span id="next-quiz-label">Next</span>
-                    <span class="nav-arrow">→</span>
-                </a>
-            </div>
-            <p class="share-hint">Click to copy to clipboard</p>
-
-            <a href="/" class="back-to-categories">Home</a>
-
-            <footer class="site-footer">
-                <a href="https://chaos.social/@guacamole" target="_blank" rel="noopener"
-                   title="@guacamole@chaos.social">written by @guacamole@chaos.social</a>
-                <span class="footer-sep">|</span>
-                <a href="https://github.com/Guacam-Ole/FreezeTune/issues" target="_blank" rel="noopener"
-                   title="Bugs, Suggestions, Feedback">Feedback</a>
-            </footer>
         </div>
+    </div>
+
+    <div class="bottom-bar">
+        <div class="quiz-navigation">
+            <a id="prev-quiz-btn" href="#" class="quiz-nav-btn prev-btn inactive">
+                <span class="nav-arrow">←</span>
+                <span id="prev-quiz-label">Previous</span>
+            </a>
+            <button id="share-results-btn" class="share-results-btn" disabled>Share Results</button>
+            <a id="next-quiz-btn" href="#" class="quiz-nav-btn next-btn inactive">
+                <span id="next-quiz-label">Next</span>
+                <span class="nav-arrow">→</span>
+            </a>
+        </div>
+        <footer class="site-footer">
+            <a href="https://chaos.social/@guacamole" target="_blank" rel="noopener"
+               title="@guacamole@chaos.social">written by @guacamole@chaos.social</a>
+            <span class="footer-sep">|</span>
+            <a href="https://github.com/Guacam-Ole/FreezeTune/issues" target="_blank" rel="noopener"
+               title="Bugs, Suggestions, Feedback">Feedback</a>
+        </footer>
     </div>
 
     <div id="error-message" class="error-message hidden"></div>
@@ -198,12 +189,10 @@
 
 <script src="js/app.js"></script>
 <script>
-    // Update page title and heading based on category query parameter
+    // Update page title based on category query parameter
     (function() {
         const category = new URLSearchParams(window.location.search).get('category') || '80s';
         document.title = `FreezeTune - ${category} Quiz`;
-        const h1 = document.querySelector('header h1');
-        if (h1) h1.textContent = `FreezeTune ${category} Quiz`;
     })();
 </script>
 </body>
