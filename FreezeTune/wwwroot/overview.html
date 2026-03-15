@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FreezeTune Overview</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --surface-light: #334155;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --error: #ef4444;
+            --radius: 10px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .auth-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        input[type="password"], input[type="text"] {
+            background: var(--surface);
+            border: 1px solid var(--surface-light);
+            color: var(--text);
+            padding: 8px 12px;
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="password"] { width: 260px; }
+        input[type="text"] { width: 200px; }
+
+        input:focus { border-color: var(--primary); }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover { background: var(--primary-dark); }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .filters {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        select {
+            background: var(--surface);
+            border: 1px solid var(--surface-light);
+            color: var(--text);
+            padding: 8px 12px;
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        select:focus { border-color: var(--primary); }
+
+        .count {
+            margin-left: auto;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        thead th {
+            background: var(--surface);
+            padding: 10px 14px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        thead th:hover { color: var(--text); }
+        thead th.sorted { color: var(--primary); }
+
+        thead th .arrow { margin-left: 4px; opacity: 0.6; }
+
+        tbody tr {
+            border-bottom: 1px solid var(--surface);
+            transition: background 0.1s;
+        }
+
+        tbody tr:hover { background: var(--surface); }
+
+        td {
+            padding: 9px 14px;
+            vertical-align: middle;
+        }
+
+        td.date { color: var(--text-muted); white-space: nowrap; font-size: 0.85rem; }
+        td.category { white-space: nowrap; }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-cat {
+            background: rgba(99,102,241,0.15);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+
+        .badge-local {
+            background: rgba(16,185,129,0.15);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .badge-yt {
+            background: rgba(239,68,68,0.15);
+            color: #f87171;
+            border: 1px solid #f87171;
+        }
+
+        .badge-none {
+            background: rgba(148,163,184,0.1);
+            color: var(--text-muted);
+            border: 1px solid var(--surface-light);
+        }
+
+        .status {
+            padding: 10px 0;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .status.error { color: var(--error); }
+
+        #controls { display: none; }
+    </style>
+</head>
+<body>
+    <h1>FreezeTune Overview</h1>
+
+    <div class="auth-bar">
+        <input type="password" id="key-input" placeholder="Secret key" />
+        <button id="load-btn">Load</button>
+        <span id="auth-status" class="status"></span>
+    </div>
+
+    <div id="controls">
+        <div class="filters">
+            <select id="category-filter">
+                <option value="">All categories</option>
+            </select>
+            <input type="text" id="search-artist" placeholder="Artist…" />
+            <input type="text" id="search-title" placeholder="Title…" />
+            <span id="count" class="count"></span>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th data-col="date">Date <span class="arrow">↕</span></th>
+                    <th data-col="category">Category <span class="arrow">↕</span></th>
+                    <th data-col="interpret">Artist <span class="arrow">↕</span></th>
+                    <th data-col="title">Title <span class="arrow">↕</span></th>
+                    <th>Media</th>
+                </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+        </table>
+    </div>
+
+    <script>
+        let allEntries = [];
+        let sortCol = 'date';
+        let sortAsc = false;
+
+        const keyInput = document.getElementById('key-input');
+        const loadBtn = document.getElementById('load-btn');
+        const authStatus = document.getElementById('auth-status');
+        const controls = document.getElementById('controls');
+        const categoryFilter = document.getElementById('category-filter');
+        const searchArtist = document.getElementById('search-artist');
+        const searchTitle = document.getElementById('search-title');
+        const countEl = document.getElementById('count');
+        const tableBody = document.getElementById('table-body');
+
+        keyInput.addEventListener('keydown', e => { if (e.key === 'Enter') loadData(); });
+        loadBtn.addEventListener('click', loadData);
+        categoryFilter.addEventListener('change', render);
+        searchArtist.addEventListener('input', render);
+        searchTitle.addEventListener('input', render);
+
+        document.querySelectorAll('thead th[data-col]').forEach(th => {
+            th.addEventListener('click', () => {
+                const col = th.dataset.col;
+                if (sortCol === col) sortAsc = !sortAsc;
+                else { sortCol = col; sortAsc = true; }
+                document.querySelectorAll('thead th').forEach(t => t.classList.remove('sorted'));
+                th.classList.add('sorted');
+                render();
+            });
+        });
+
+        async function loadData() {
+            const key = keyInput.value.trim();
+            if (!key) return;
+
+            loadBtn.disabled = true;
+            authStatus.textContent = 'Loading…';
+            authStatus.className = 'status';
+
+            try {
+                const res = await fetch(`/Maintenance/All?key=${encodeURIComponent(key)}`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+                const data = await res.json();
+
+                // Flatten dictionary into array
+                allEntries = [];
+                for (const [category, entries] of Object.entries(data)) {
+                    for (const entry of entries) {
+                        allEntries.push({ ...entry, category });
+                    }
+                }
+
+                // Populate category dropdown
+                const categories = [...new Set(allEntries.map(e => e.category))].sort();
+                categoryFilter.innerHTML = '<option value="">All categories</option>';
+                categories.forEach(cat => {
+                    const opt = document.createElement('option');
+                    opt.value = cat;
+                    opt.textContent = cat;
+                    categoryFilter.appendChild(opt);
+                });
+
+                authStatus.textContent = `${allEntries.length} entries loaded`;
+                controls.style.display = 'block';
+                render();
+            } catch (e) {
+                authStatus.textContent = `Error: ${e.message}`;
+                authStatus.className = 'status error';
+            } finally {
+                loadBtn.disabled = false;
+            }
+        }
+
+        function render() {
+            const catFilter = categoryFilter.value;
+            const artistQ = searchArtist.value.toLowerCase();
+            const titleQ = searchTitle.value.toLowerCase();
+
+            let filtered = allEntries.filter(e => {
+                if (catFilter && e.category !== catFilter) return false;
+                if (artistQ && !(e.interpret || '').toLowerCase().includes(artistQ)) return false;
+                if (titleQ && !(e.title || '').toLowerCase().includes(titleQ)) return false;
+                return true;
+            });
+
+            filtered.sort((a, b) => {
+                let va = a[sortCol] ?? '';
+                let vb = b[sortCol] ?? '';
+                if (va < vb) return sortAsc ? -1 : 1;
+                if (va > vb) return sortAsc ? 1 : -1;
+                return 0;
+            });
+
+            countEl.textContent = `${filtered.length} entries`;
+
+            tableBody.innerHTML = filtered.map(e => {
+                const media = e.videoFile
+                    ? `<span class="badge badge-local">Local</span>`
+                    : e.url
+                        ? `<span class="badge badge-yt">YouTube</span>`
+                        : `<span class="badge badge-none">None</span>`;
+
+                return `<tr>
+                    <td class="date">${e.date ?? ''}</td>
+                    <td class="category"><span class="badge badge-cat">${esc(e.category)}</span></td>
+                    <td>${esc(e.interpret ?? '')}</td>
+                    <td>${esc(e.title ?? '')}</td>
+                    <td>${media}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function esc(str) {
+            return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+    </script>
+</body>
+</html>
