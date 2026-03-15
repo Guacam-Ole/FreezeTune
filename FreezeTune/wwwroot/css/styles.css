@@ -156,6 +156,21 @@ header h1 {
     to { transform: rotate(360deg); }
 }
 
+/* Replay Badge */
+.replay-badge {
+    display: inline-block;
+    margin: 10px auto 0;
+    padding: 4px 12px;
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid var(--primary-color);
+    border-radius: 999px;
+    color: var(--primary-color);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-align: center;
+}
+
 /* Category Subtitle (hint below progress bar) */
 .category-subtitle {
     text-align: center;

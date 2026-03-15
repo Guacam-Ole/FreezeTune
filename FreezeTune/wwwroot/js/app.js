@@ -269,6 +269,7 @@ async function resumeGame(guessCount) {
         }
 
         const result = await response.json();
+        updateReplayBadge(result.quizDate);
 
         // Load the image for the current guess position
         if (result.nextPictureContents) {
@@ -292,6 +293,18 @@ if (restartBtn) {
 }
 shareResultsBtn.addEventListener('click', shareResults);
 
+// Show or hide the "Replay from <date>" badge
+function updateReplayBadge(quizDate) {
+    const badge = document.getElementById('replay-badge');
+    if (!badge) return;
+    if (quizDate && quizDate !== getTodayString()) {
+        badge.textContent = `Replay from ${quizDate}`;
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
+}
+
 // Start a new game
 async function startNewGame() {
     currentGuessCount = 0;
@@ -312,6 +325,7 @@ async function startNewGame() {
         }
 
         const result = await response.json();
+        updateReplayBadge(result.quizDate);
         loadImage(result.nextPictureContents);
         updateProgress(1);
     } catch (error) {
