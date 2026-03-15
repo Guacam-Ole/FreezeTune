@@ -10,4 +10,5 @@ public class Result
     public string NextPictureContents { get; set; } = string.Empty;
     public string? Interpret { get; set; }
     public List<string>? AllPictureContents { get; set; }
+    public DateOnly QuizDate { get; set; }
 }
