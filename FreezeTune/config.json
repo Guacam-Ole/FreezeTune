@@ -6,18 +6,23 @@
   "Categories": [
     {
       "Header": "Music by Decade",
-      "Name": "80s"
+      "Name": "80s",
+      "SearchMode": "Artist"
     },
     {
       "Header": "Music by Decade",
-      "Name": "90s"
+      "Name": "90s",
+      "SearchMode": "Artist",
+      "CountryFilter": "de"
     },
     {
       "Header": "Music by Artist",
       "Name": "Weird Al",
       "TitleCaption": "Weird Al's song title",
       "ArtistCaption": "Parody of...",
-      "ShowHints": false
+      "ShowHints": false,
+      "SearchMode": "Album",
+      "Artist": "Depeche Mode"
     }
   ]
 }

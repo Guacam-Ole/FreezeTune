@@ -17,14 +17,14 @@ public class SearchController : ControllerBase
     public async Task<List<string>> SearchArtist(string? country, string input)
     {
         if (string.IsNullOrWhiteSpace(input)) return new List<string>();
-        return await _musicSearchRepository.SearchArtist(country, input);
+        return await _musicSearchRepository.SearchArtistName(country, input);
     }
 
     [HttpGet("album")]
     public async Task<List<string>> SearchAlbum(string artist, string input)
     {
         if (string.IsNullOrWhiteSpace(input)) return new List<string>();
-        return await _musicSearchRepository.SearchAlbum(artist, input);
+        return await _musicSearchRepository.SearchAlbumName(artist, input);
     }
 
 

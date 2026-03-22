@@ -10,4 +10,7 @@ public class Category
     public bool HasArtist { get; set; } = true;
     public string? Header { get; set; }
     public string? SubTitle { get; set; }
+    public SearchMode SearchMode { get; set; } = SearchMode.None;
+    public string? CountryFilter { get; set; }
+    public string? Artist { get; set; }
 }

@@ -18,6 +18,4 @@ public class Config
     public double MaxDistance { get; set; } = 3;
 
     public List<Category> Categories { get; set; } = [];
-    public string? CountryFilter { get; set; }
-    public SearchModes SearchMode = SearchModes.None;
 }
