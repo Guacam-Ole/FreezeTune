@@ -35,6 +35,7 @@ builder.Services.AddSingleton<Config>(sp => sp.GetRequiredService<IOptions<Confi
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+builder.Services.AddScoped<IMusicSearchRepository, MusicSearchRepository>();
 builder.Services.AddScoped<IUserLogic, UserLogic>();
 builder.Services.AddScoped<IDatabaseRepository, DatabaseRepository>();
 builder.Services.AddScoped<IImageRepository, ImageRepository>();

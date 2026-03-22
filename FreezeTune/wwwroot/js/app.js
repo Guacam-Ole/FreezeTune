@@ -4,6 +4,9 @@ let maxGuesses = 8;
 let currentCategory = new URLSearchParams(window.location.search).get('category') || '80s';
 let availableCategories = [];
 let categoryHasArtist = true;
+let categorySearchMode = 'None';
+let categoryCountryFilter = null;
+let categoryArtist = null;
 let currentQuizDate = null;
 
 // LocalStorage key for game state (category-specific)
@@ -118,6 +121,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
     await loadCategories();
     await loadCaptions();
+//    updateSkipButton();
+    initAutocomplete();
     updateQuizNavigation();
     shareResultsBtn.disabled = !hasAnyCompletedGame();
     initializeGame();
@@ -137,6 +142,12 @@ async function loadCategories() {
                 ...noHeader.map(cat => cat.name),
                 ...headers.flatMap(h => withQuizzes.filter(cat => cat.header === h).map(cat => cat.name))
             ];
+            const currentCat = categories.find(cat => cat.name === currentCategory);
+            if (currentCat) {
+                categorySearchMode = currentCat.searchMode || 'None';
+                categoryCountryFilter = currentCat.countryFilter || null;
+                categoryArtist = currentCat.artist || null;
+            }
         }
     } catch (e) {
         console.error('Error loading categories:', e);
@@ -811,3 +822,100 @@ document.addEventListener('keydown', (e) => {
         closeModal();
     }
 });
+
+// ── Autocomplete ────────────────────────────────────────────────────────────
+
+function createDropdown(inputEl) {
+    const dropdown = document.createElement('ul');
+    dropdown.className = 'autocomplete-dropdown hidden';
+    inputEl.parentElement.appendChild(dropdown);
+    return dropdown;
+}
+
+function showDropdown(dropdown, suggestions, inputEl) {
+    dropdown.innerHTML = '';
+    if (!suggestions.length) {
+        dropdown.classList.add('hidden');
+        return;
+    }
+    suggestions.forEach(text => {
+        const li = document.createElement('li');
+        li.textContent = text;
+        li.addEventListener('mousedown', (e) => {
+            e.preventDefault(); // keep focus on input during selection
+            inputEl.value = text;
+            dropdown.classList.add('hidden');
+        });
+        dropdown.appendChild(li);
+    });
+    dropdown.classList.remove('hidden');
+}
+
+function hideDropdown(dropdown) {
+    dropdown.classList.add('hidden');
+}
+
+async function fetchSuggestions(url) {
+    try {
+        const res = await fetch(url);
+        if (!res.ok) return [];
+        return await res.json();
+    } catch {
+        return [];
+    }
+}
+
+function debounce(fn, ms) {
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), ms);
+    };
+}
+
+function initAutocomplete() {
+    if (categorySearchMode === 'None') return;
+
+    const interpretDropdown = createDropdown(interpretInput);
+    const titleDropdown = createDropdown(titleInput);
+
+    // Upper field (interpret / album)
+    const onInterpretInput = debounce(async () => {
+        const val = interpretInput.value.trim();
+        if (val.length < 3) { hideDropdown(interpretDropdown); return; }
+
+        let url;
+        if (categorySearchMode === 'Artist') {
+            url = `/search/artist?input=${encodeURIComponent(val)}`;
+            if (categoryCountryFilter) url += `&country=${encodeURIComponent(categoryCountryFilter)}`;
+        } else { // Album
+            url = `/search/album?artist=${encodeURIComponent(categoryArtist ?? '')}&input=${encodeURIComponent(val)}`;
+        }
+        const suggestions = await fetchSuggestions(url);
+        showDropdown(interpretDropdown, suggestions, interpretInput);
+    }, 300);
+
+    // Lower field (title)
+    const onTitleInput = debounce(async () => {
+        const val = titleInput.value.trim();
+        if (val.length < 3) { hideDropdown(titleDropdown); return; }
+
+        let url;
+        if (categorySearchMode === 'Artist') {
+            const artist = encodeURIComponent(interpretInput.value.trim());
+            url = `/search/artisttitle?artist=${artist}&input=${encodeURIComponent(val)}`;
+        } else { // Album
+            const album = encodeURIComponent(interpretInput.value.trim());
+            url = `/search/albumtitle?artist=${encodeURIComponent(categoryArtist ?? '')}&album=${album}&input=${encodeURIComponent(val)}`;
+        }
+        const suggestions = await fetchSuggestions(url);
+        showDropdown(titleDropdown, suggestions, titleInput);
+    }, 300);
+
+    interpretInput.addEventListener('input', onInterpretInput);
+    titleInput.addEventListener('input', onTitleInput);
+
+    interpretInput.addEventListener('blur', () => setTimeout(() => hideDropdown(interpretDropdown), 150));
+    titleInput.addEventListener('blur', () => setTimeout(() => hideDropdown(titleDropdown), 150));
+}
+

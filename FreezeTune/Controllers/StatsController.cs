@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace FreezeTune.Controllers;
 
 [Route("Stats")]
-public class StatsController:ControllerBase
+public class StatsController: ControllerBase
 {
     private readonly IDatabaseRepository _databaseRepositor;
     private readonly Config _config;
