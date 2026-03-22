@@ -121,7 +121,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
     await loadCategories();
     await loadCaptions();
-    updateSkipButton();
+//    updateSkipButton();
     initAutocomplete();
     updateQuizNavigation();
     shareResultsBtn.disabled = !hasAnyCompletedGame();
