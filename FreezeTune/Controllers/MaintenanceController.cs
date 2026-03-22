@@ -22,15 +22,21 @@ public class MaintenanceController : ControllerBase
         _logger = logger;
     }
 
-    private void ValidateKey(string? category, string key)
+    private string? ValidateKey(string? category, string? key)
     {
+        if (key == null) throw new Exception("Wrong Key");
         var masterKey = Environment.GetEnvironmentVariable("FREEZEAPIKEY");
-        if (key == masterKey) return;
-        if (category == null) throw new Exception("Wrong key");
+        if (key == masterKey) return null;
+        if (category == null)
+        {
+            var matchingCategory = _config.Categories.FirstOrDefault(q => q.Password == key);
+            return matchingCategory != null ? matchingCategory.Name : throw new Exception("Wrong Key");
+        } 
         
         var categoryConfig = _config.Categories.FirstOrDefault(q => q.Name == category);
         if (categoryConfig == null) throw new Exception("Wrong Category");
         if (categoryConfig.Password == null || categoryConfig.Password != key) throw new Exception("Wrong key");
+        return categoryConfig.Name;
     }
 
     [HttpGet("Date")]
@@ -77,8 +83,9 @@ public class MaintenanceController : ControllerBase
     [HttpGet("All")]
     public ActionResult<Dictionary<string, List<Daily>>> GetAll(string key)
     {
-        ValidateKey("egal", key);
-        return Ok(_maintenanceLogic.GetAllEntries());
+        var category=ValidateKey(null, key);
+        
+        return Ok(_maintenanceLogic.GetAllEntries().Where(q=>category==null || q.Key==category ).ToDictionary());
     }
 
     [HttpGet("Progress")]

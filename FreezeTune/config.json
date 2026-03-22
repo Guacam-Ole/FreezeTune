@@ -23,6 +23,8 @@
       "ShowHints": false,
       "SearchMode": "Album",
       "Artist": "Depeche Mode"
+      "Password": "weird",
+      "ShowHints": false
     }
   ]
 }

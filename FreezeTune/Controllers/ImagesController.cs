@@ -135,6 +135,7 @@ public class ImagesController : Controller
         var todaysRiddle = _databaseRepository.GetForToday(category);
         return new Result
         {
+            QuizDate = todaysRiddle.Date,
             Guesses = 0,
             InterpretCorrect = false,
             TitleCorrect = false,

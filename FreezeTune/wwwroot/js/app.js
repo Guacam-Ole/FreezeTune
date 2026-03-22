@@ -7,6 +7,7 @@ let categoryHasArtist = true;
 let categorySearchMode = 'None';
 let categoryCountryFilter = null;
 let categoryArtist = null;
+let currentQuizDate = null;
 
 // LocalStorage key for game state (category-specific)
 function getStorageKey() {
@@ -27,7 +28,8 @@ function saveGameState(completed = false, matchData = null) {
         guessCount: currentGuessCount,
         completed: completed,
         match: matchData,
-        lastGameResult: lastGameResult
+        lastGameResult: lastGameResult,
+        quizDate: currentQuizDate
     };
     localStorage.setItem(getStorageKey(), JSON.stringify(state));
 }
@@ -55,6 +57,21 @@ function loadGameState() {
 // Clear game state
 function clearGameState() {
     localStorage.removeItem(getStorageKey());
+}
+
+// Check if any game has been completed today (across all categories)
+function hasAnyCompletedGame() {
+    const today = getTodayString();
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('freezetune_game_state_')) {
+            try {
+                const state = JSON.parse(localStorage.getItem(key));
+                if (state && state.date === today && state.completed) return true;
+            } catch (e) { /* ignore */ }
+        }
+    }
+    return false;
 }
 
 // DOM elements
@@ -106,6 +123,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     await loadCaptions();
     updateSkipButton();
     initAutocomplete();
+    updateQuizNavigation();
+    shareResultsBtn.disabled = !hasAnyCompletedGame();
     initializeGame();
 });
 
@@ -146,6 +165,9 @@ async function loadCaptions() {
             document.querySelector('label[for="title"]').textContent = captions.titleCaption || 'Song Title';
             interpretInput.closest('.input-group').style.display = categoryHasArtist ? '' : 'none';
 
+            const headerLabel = categoryHasArtist ? (captions.artistCaption || 'Artist') : (captions.titleCaption || 'Category');
+            document.getElementById('category-label').textContent = `${headerLabel}: ${currentCategory}`;
+
             const subtitleEl = document.getElementById('category-subtitle');
             if (captions.subTitle) {
                 subtitleEl.textContent = captions.subTitle;
@@ -159,25 +181,6 @@ async function loadCaptions() {
     }
 }
 
-// Show/hide skip button on game screen based on whether there's a next category
-function updateSkipButton() {
-    const skipBtn = document.getElementById('skip-category-btn');
-    const skipLabel = document.getElementById('skip-category-label');
-    if (!skipBtn || !skipLabel) return;
-
-    const currentIndex = availableCategories.indexOf(currentCategory);
-    const hasNext = currentIndex !== -1 && currentIndex < availableCategories.length - 1;
-
-    if (hasNext) {
-        const nextCategory = availableCategories[currentIndex + 1];
-        skipBtn.href = `game.html?category=${encodeURIComponent(nextCategory)}`;
-        skipLabel.textContent = nextCategory;
-        skipBtn.classList.remove('hidden');
-    } else {
-        skipBtn.classList.add('hidden');
-    }
-}
-
 // Update quiz navigation buttons based on current category position
 function updateQuizNavigation() {
     const prevBtn = document.getElementById('prev-quiz-btn');
@@ -185,40 +188,28 @@ function updateQuizNavigation() {
     const prevLabel = document.getElementById('prev-quiz-label');
     const nextLabel = document.getElementById('next-quiz-label');
 
-    if (availableCategories.length <= 1) {
-        prevBtn.classList.add('hidden');
-        nextBtn.classList.add('hidden');
-        return;
-    }
-
     const currentIndex = availableCategories.indexOf(currentCategory);
-    if (currentIndex === -1) {
-        prevBtn.classList.add('hidden');
-        nextBtn.classList.add('hidden');
-        return;
-    }
-
     const hasPrev = currentIndex > 0;
-    const hasNext = currentIndex < availableCategories.length - 1;
+    const hasNext = currentIndex !== -1 && currentIndex < availableCategories.length - 1;
 
-    // Previous button
     if (hasPrev) {
         const prevCategory = availableCategories[currentIndex - 1];
         prevBtn.href = `game.html?category=${encodeURIComponent(prevCategory)}`;
         prevLabel.textContent = prevCategory;
-        prevBtn.classList.remove('hidden');
+        prevBtn.classList.remove('inactive');
     } else {
-        prevBtn.classList.add('hidden');
+        prevLabel.textContent = 'Previous';
+        prevBtn.classList.add('inactive');
     }
 
-    // Next button
     if (hasNext) {
         const nextCategory = availableCategories[currentIndex + 1];
         nextBtn.href = `game.html?category=${encodeURIComponent(nextCategory)}`;
         nextLabel.textContent = nextCategory;
-        nextBtn.classList.remove('hidden');
+        nextBtn.classList.remove('inactive');
     } else {
-        nextBtn.classList.add('hidden');
+        nextLabel.textContent = 'Next';
+        nextBtn.classList.add('inactive');
     }
 }
 
@@ -235,6 +226,7 @@ async function initializeGame() {
         // If game was completed, show the result screen
         if (savedState.completed && savedState.match) {
             currentGuessCount = savedState.guessCount;
+            updateReplayBadge(savedState.quizDate);
             showSuccess(savedState.match, savedState.guessCount);
             return;
         }
@@ -279,6 +271,7 @@ async function resumeGame(guessCount) {
         }
 
         const result = await response.json();
+        updateReplayBadge(result.quizDate);
 
         // Load the image for the current guess position
         if (result.nextPictureContents) {
@@ -302,10 +295,24 @@ if (restartBtn) {
 }
 shareResultsBtn.addEventListener('click', shareResults);
 
+// Show or hide the "Replay from <date>" badge
+function updateReplayBadge(quizDate) {
+    currentQuizDate = quizDate || null;
+    const badge = document.getElementById('replay-badge');
+    if (!badge) return;
+    if (quizDate && quizDate !== getTodayString()) {
+        badge.textContent = `Replay from ${quizDate}`;
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
+}
+
 // Start a new game
 async function startNewGame() {
     currentGuessCount = 0;
     lastGameResult = { guesses: 0, success: false };
+    shareResultsBtn.disabled = !hasAnyCompletedGame();
     clearFeedback();
     clearInputs();
     hideSuccessScreen();
@@ -322,6 +329,7 @@ async function startNewGame() {
         }
 
         const result = await response.json();
+        updateReplayBadge(result.quizDate);
         loadImage(result.nextPictureContents);
         updateProgress(1);
     } catch (error) {
@@ -572,6 +580,9 @@ function showSuccess(match, guesses, wasCorrectGuess = null, allPictures = null)
     } else {
         imageSummary.classList.add('hidden');
     }
+
+    // Enable share button now that a result exists
+    shareResultsBtn.disabled = false;
 
     // Update navigation to other quizzes
     updateQuizNavigation();
