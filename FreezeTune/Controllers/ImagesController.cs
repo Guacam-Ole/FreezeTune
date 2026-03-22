@@ -26,7 +26,10 @@ public class ImagesController : Controller
         {
             name = q.Name,
             count = _databaseRepository.CountForCategory(q.Name),
-            header = q.Header
+            header = q.Header,
+            searchMode = q.SearchMode.ToString(),
+            countryFilter = q.CountryFilter,
+            artist = q.Artist
         });
     }
 
