@@ -836,7 +836,7 @@ function createDropdown(inputEl) {
     return dropdown;
 }
 
-function showDropdown(dropdown, suggestions, inputEl) {
+function showDropdown(dropdown, suggestions, inputEl, onSelect) {
     dropdown.innerHTML = '';
     if (!suggestions.length) {
         dropdown.classList.add('hidden');
@@ -848,6 +848,7 @@ function showDropdown(dropdown, suggestions, inputEl) {
         li.addEventListener('mousedown', (e) => {
             e.preventDefault(); // keep focus on input during selection
             inputEl.value = text;
+            if (onSelect) onSelect(text);
             dropdown.classList.add('hidden');
         });
         dropdown.appendChild(li);
@@ -896,7 +897,7 @@ function initAutocomplete() {
             url = `/search/album?artist=${encodeURIComponent(categoryArtist ?? '')}&input=${encodeURIComponent(val)}`;
         }
         const suggestions = await fetchSuggestions(url);
-        showDropdown(interpretDropdown, suggestions, interpretInput);
+        showDropdown(interpretDropdown, suggestions, interpretInput, (text) => { currentInterpretValue = text; });
     }, 300);
 
     // Lower field (title)
