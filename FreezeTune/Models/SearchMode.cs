@@ -4,5 +4,7 @@ public enum SearchMode
 {
     None,
     Artist,
-    Album
+    Album,
+    Tv,
+    Movie
 }

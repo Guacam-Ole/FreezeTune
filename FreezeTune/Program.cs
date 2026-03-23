@@ -13,6 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 builder.Configuration.AddJsonFile("config.json", optional: false, reloadOnChange: true);
+builder.Configuration.AddJsonFile("secrets.json", optional: true, reloadOnChange: true);
 builder.Services.AddLogging(cfg => cfg.SetMinimumLevel(LogLevel.Debug));
 builder.Services.AddSerilog(cfg =>
 {
@@ -32,9 +33,12 @@ builder.Services.AddSerilog(cfg =>
 });
 builder.Services.Configure<Config>(builder.Configuration);
 builder.Services.AddSingleton<Config>(sp => sp.GetRequiredService<IOptions<Config>>().Value);
+builder.Services.Configure<Secrets>(builder.Configuration);
+builder.Services.AddSingleton<Secrets>(sp => sp.GetRequiredService<IOptions<Secrets>>().Value);
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+builder.Services.AddScoped<ITvSearchRepository, TvSearchRepository>();
 builder.Services.AddScoped<IMusicSearchRepository, MusicSearchRepository>();
 builder.Services.AddScoped<IUserLogic, UserLogic>();
 builder.Services.AddScoped<IDatabaseRepository, DatabaseRepository>();
