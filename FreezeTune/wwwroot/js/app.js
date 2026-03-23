@@ -8,6 +8,7 @@ let categorySearchMode = 'None';
 let categoryCountryFilter = null;
 let categoryArtist = null;
 let currentQuizDate = null;
+let currentInterpretValue = '';
 
 // LocalStorage key for game state (category-specific)
 function getStorageKey() {
@@ -421,8 +422,10 @@ function handleGuessResult(result) {
         const interpretHint = result.interpret;
         if (interpretHint) {
             interpretInput.value = interpretHint;
+            currentInterpretValue = interpretHint;
         } else if (!result.interpretCorrect) {
             interpretInput.value = '';
+            currentInterpretValue = '';
         }
     }
 
@@ -480,6 +483,7 @@ function clearFeedback() {
 // Clear inputs
 function clearInputs() {
     interpretInput.value = '';
+    currentInterpretValue = '';
     titleInput.value = '';
     interpretInput.disabled = false;
     titleInput.disabled = false;
@@ -902,17 +906,24 @@ function initAutocomplete() {
 
         let url;
         if (categorySearchMode === 'Artist') {
-            const artist = encodeURIComponent(interpretInput.value.trim());
+            const artist = encodeURIComponent(currentInterpretValue);
             url = `/search/artisttitle?artist=${artist}&input=${encodeURIComponent(val)}`;
-        } else { // Album
-            const album = encodeURIComponent(interpretInput.value.trim());
+        } else if (categorySearchMode === 'Album') {
+            const album = encodeURIComponent(currentInterpretValue);
             url = `/search/albumtitle?artist=${encodeURIComponent(categoryArtist ?? '')}&album=${album}&input=${encodeURIComponent(val)}`;
+        } else if (categorySearchMode === 'Tv') {
+            url = `/search/tv?input=${encodeURIComponent(val)}`;
+        } else if (categorySearchMode === 'Movie') {
+            url = `/search/movie?input=${encodeURIComponent(val)}`;
         }
         const suggestions = await fetchSuggestions(url);
         showDropdown(titleDropdown, suggestions, titleInput);
     }, 300);
 
-    interpretInput.addEventListener('input', onInterpretInput);
+    interpretInput.addEventListener('input', () => {
+        currentInterpretValue = interpretInput.value.trim();
+        onInterpretInput();
+    });
     titleInput.addEventListener('input', onTitleInput);
 
     interpretInput.addEventListener('blur', () => setTimeout(() => hideDropdown(interpretDropdown), 150));

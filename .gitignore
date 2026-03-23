@@ -91,3 +91,4 @@ obj
 .idea
 docker-compose.yml
 *.zip
+FreezeTune/secrets.json

@@ -21,8 +21,8 @@
       "TitleCaption": "Weird Al's song title",
       "ArtistCaption": "Parody of...",
       "ShowHints": false,
-      "SearchMode": "Album",
-      "Artist": "Depeche Mode"
+      "HasArtist": false,
+      "SearchMode": "Tv"
     }
   ]
 }
