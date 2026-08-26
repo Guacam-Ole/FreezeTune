@@ -1,2 +1,1 @@
-# Archived
-This Repo is archived and moved to [CodeBerg](https://codeberg.org/Guacamole/FreezeTune)
+This Repo is archived and moved to [iGITt.oles.cloud](https://igitt.oles.cloud/GuacamOle/FreezeTune)
